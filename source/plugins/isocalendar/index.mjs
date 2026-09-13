@@ -27,48 +27,15 @@ export default async function({login, data, graphql, q, imports, queries, accoun
 
     //Compute contribution calendar, highest contributions in a day, streaks and average commits per day
     console.debug(`metrics/compute/${login}/plugins > isocalendar > computing stats`)
-    const calendar = {weeks: []}
-    const {streak, max, average} = await statistics({login, graphql, queries, start, end: now, calendar})
-    const reference = Math.max(...calendar.weeks.flatMap(({contributionDays}) => contributionDays.map(({contributionCount}) => contributionCount)))
+    const weeks = await load({login, graphql, queries, start, end: now})
+    const {streak, max, average} = statistics(weeks)
 
     //Compute SVG
     console.debug(`metrics/compute/${login}/plugins > isocalendar > computing svg render`)
-    const size = 6
-    let i = 0, j = 0
-    let svg = `
-            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" style="margin-top: -130px;" viewBox="0,0 480,${duration === "full-year" ? 270 : 170}">
-              ${
-      [1, 2].map(k => `
-                <filter id="brightness${k}">
-                  <feComponentTransfer>
-                    ${[..."RGB"].map(channel => `<feFunc${channel} type="linear" slope="${1 - k * 0.4}" />`).join("")}
-                  </feComponentTransfer>
-                </filter>`)
-        .join("")
-    }
-              <g transform="scale(4) translate(12, 0)">`
-    //Iterate through weeks
-    for (const week of calendar.weeks) {
-      svg += `<g transform="translate(${i * 1.7}, ${i})">`
-      j = 0
-      //Iterate through days
-      for (const day of week.contributionDays) {
-        const ratio = (day.contributionCount / reference) || 0
-        svg += `
-                    <g transform="translate(${j * -1.7}, ${j + (1 - ratio) * size})">
-                      <path fill="${day.color}" d="M1.7,2 0,1 1.7,0 3.4,1 z" />
-                      <path fill="${day.color}" filter="url(#brightness1)" d="M0,1 1.7,2 1.7,${2 + ratio * size} 0,${1 + ratio * size} z" />
-                      <path fill="${day.color}" filter="url(#brightness2)" d="M1.7,2 3.4,1 3.4,${1 + ratio * size} 1.7,${2 + ratio * size} z" />
-                    </g>`
-        j++
-      }
-      svg += "</g>"
-      i++
-    }
-    svg += "</g></svg>"
+    const svg = render(weeks, duration)
 
     //Results
-    return {streak, max, average, svg, duration}
+    return {streak, max, average, svg, duration, weeks}
   }
   //Handle errors
   catch (error) {
@@ -76,10 +43,9 @@ export default async function({login, data, graphql, q, imports, queries, accoun
   }
 }
 
-/**Compute max and current streaks */
-async function statistics({login, graphql, queries, start, end, calendar}) {
-  let average = 0, max = 0, streak = {max: 0, current: 0}, values = []
-  //Load contribution calendar
+/**Load contribution calendar weeks between start and end */
+async function load({login, graphql, queries, start, end}) {
+  const weeks = []
   for (let from = new Date(start); from < end;) {
     //Set date range
     let to = new Date(from)
@@ -94,13 +60,19 @@ async function statistics({login, graphql, queries, start, end, calendar}) {
     dto.setUTCMilliseconds(999)
     //Fetch data from api
     console.debug(`metrics/compute/${login}/plugins > isocalendar > loading calendar from "${from.toISOString()}" to "${dto.toISOString()}"`)
-    const {user: {calendar: {contributionCalendar: {weeks}}}} = await graphql(queries.isocalendar.calendar({login, from: from.toISOString(), to: dto.toISOString()}))
-    calendar.weeks.push(...weeks)
+    const {user: {calendar: {contributionCalendar: {weeks: loaded}}}} = await graphql(queries.isocalendar.calendar({login, from: from.toISOString(), to: dto.toISOString()}))
+    weeks.push(...loaded)
     //Set next date range start
     from = new Date(to)
   }
+  return weeks
+}
+
+/**Compute max and current streaks (also used by the multi-account merge to recompute them from summed weeks) */
+export function statistics(weeks) {
+  let average = 0, max = 0, streak = {max: 0, current: 0}, values = []
   //Compute streaks
-  for (const week of calendar.weeks) {
+  for (const week of weeks) {
     for (const day of week.contributionDays) {
       values.push(day.contributionCount)
       max = Math.max(max, day.contributionCount)
@@ -111,4 +83,43 @@ async function statistics({login, graphql, queries, start, end, calendar}) {
   //Compute average
   average = (values.reduce((a, b) => a + b, 0) / values.length).toFixed(2).replace(/[.]0+$/, "")
   return {streak, max, average}
+}
+
+/**Render isometric calendar svg from weeks (also used by the multi-account merge) */
+export function render(weeks, duration) {
+  const reference = Math.max(...weeks.flatMap(({contributionDays}) => contributionDays.map(({contributionCount}) => contributionCount)))
+  const size = 6
+  let i = 0, j = 0
+  let svg = `
+            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" style="margin-top: -130px;" viewBox="0,0 480,${duration === "full-year" ? 270 : 170}">
+              ${
+    [1, 2].map(k => `
+                <filter id="brightness${k}">
+                  <feComponentTransfer>
+                    ${[..."RGB"].map(channel => `<feFunc${channel} type="linear" slope="${1 - k * 0.4}" />`).join("")}
+                  </feComponentTransfer>
+                </filter>`)
+      .join("")
+  }
+              <g transform="scale(4) translate(12, 0)">`
+  //Iterate through weeks
+  for (const week of weeks) {
+    svg += `<g transform="translate(${i * 1.7}, ${i})">`
+    j = 0
+    //Iterate through days
+    for (const day of week.contributionDays) {
+      const ratio = (day.contributionCount / reference) || 0
+      svg += `
+                    <g transform="translate(${j * -1.7}, ${j + (1 - ratio) * size})">
+                      <path fill="${day.color}" d="M1.7,2 0,1 1.7,0 3.4,1 z" />
+                      <path fill="${day.color}" filter="url(#brightness1)" d="M0,1 1.7,2 1.7,${2 + ratio * size} 0,${1 + ratio * size} z" />
+                      <path fill="${day.color}" filter="url(#brightness2)" d="M1.7,2 3.4,1 3.4,${1 + ratio * size} 1.7,${2 + ratio * size} z" />
+                    </g>`
+      j++
+    }
+    svg += "</g>"
+    i++
+  }
+  svg += "</g></svg>"
+  return svg
 }

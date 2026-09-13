@@ -79,55 +79,8 @@ export default async function({login, data, imports, rest, q, account}, {enabled
     //Diff graphs
     if (sections.includes("history")) {
       const weeks = result.weeks.filter(({date}) => !_history_limit ? true : new Date(date) > new Date(new Date().getFullYear() - _history_limit, 0, 0))
-      if (weeks.length) {
-        //Generate SVG
-        const height = 315, width = 480
-        const margin = 5, offset = 34
-        const {d3} = imports
-        const d3n = new imports.D3node()
-        const svg = d3n.createSVG(width, height)
-
-        //Time range
-        const start = new Date(weeks.at(0).date)
-        const end = new Date(weeks.at(-1).date)
-        const x = d3.scaleTime()
-          .domain([start, end])
-          .range([margin + offset, width - (offset + margin)])
-        svg.append("g")
-          .attr("transform", `translate(0,${height - (offset + margin)})`)
-          .call(d3.axisBottom(x))
-          .selectAll("text")
-          .attr("transform", "translate(-5,5) rotate(-45)")
-          .style("text-anchor", "end")
-          .style("font-size", 20)
-
-        //Diff range
-        const points = weeks.flatMap(({added, deleted, changed}) => [added + changed, deleted + changed])
-        const extremum = Math.max(...points)
-        const y = d3.scaleLinear()
-          .domain([extremum, -extremum])
-          .range([margin, height - (offset + margin)])
-        svg.append("g")
-          .attr("transform", `translate(${margin + offset},0)`)
-          .call(d3.axisLeft(y).ticks(7).tickFormat(d3.format(".2s")))
-          .selectAll("text")
-          .style("font-size", 20)
-
-        //Generate history
-        for (const {type, sign, fill} of [{type: "added", sign: +1, fill: "rgb(63, 185, 80)"}, {type: "deleted", sign: -1, fill: "rgb(218, 54, 51)"}]) {
-          svg.append("path")
-            .datum(weeks.map(({date, ...diff}) => [new Date(date), sign * (diff[type] + diff.changed)]))
-            .attr(
-              "d",
-              d3.area()
-                .x(d => x(d[0]))
-                .y0(d => y(d[1]))
-                .y1(() => y(0)),
-            )
-            .attr("fill", fill)
-        }
-        result.history = d3n.svgString()
-      }
+      if (weeks.length)
+        result.history = history(weeks, imports)
       else {
         console.debug(`metrics/compute/${login}/plugins > lines > no history data`)
         result.history = null
@@ -141,4 +94,54 @@ export default async function({login, data, imports, rest, q, account}, {enabled
   catch (error) {
     throw imports.format.error(error)
   }
+}
+
+/**Generate the SVG history graph of weekly added/deleted lines */
+export function history(weeks, imports) {
+  const height = 315, width = 480
+  const margin = 5, offset = 34
+  const {d3} = imports
+  const d3n = new imports.D3node()
+  const svg = d3n.createSVG(width, height)
+
+  //Time range
+  const start = new Date(weeks.at(0).date)
+  const end = new Date(weeks.at(-1).date)
+  const x = d3.scaleTime()
+    .domain([start, end])
+    .range([margin + offset, width - (offset + margin)])
+  svg.append("g")
+    .attr("transform", `translate(0,${height - (offset + margin)})`)
+    .call(d3.axisBottom(x))
+    .selectAll("text")
+    .attr("transform", "translate(-5,5) rotate(-45)")
+    .style("text-anchor", "end")
+    .style("font-size", 20)
+
+  //Diff range
+  const points = weeks.flatMap(({added, deleted, changed}) => [added + changed, deleted + changed])
+  const extremum = Math.max(...points)
+  const y = d3.scaleLinear()
+    .domain([extremum, -extremum])
+    .range([margin, height - (offset + margin)])
+  svg.append("g")
+    .attr("transform", `translate(${margin + offset},0)`)
+    .call(d3.axisLeft(y).ticks(7).tickFormat(d3.format(".2s")))
+    .selectAll("text")
+    .style("font-size", 20)
+
+  //Generate history
+  for (const {type, sign, fill} of [{type: "added", sign: +1, fill: "rgb(63, 185, 80)"}, {type: "deleted", sign: -1, fill: "rgb(218, 54, 51)"}]) {
+    svg.append("path")
+      .datum(weeks.map(({date, ...diff}) => [new Date(date), sign * (diff[type] + diff.changed)]))
+      .attr(
+        "d",
+        d3.area()
+          .x(d => x(d[0]))
+          .y0(d => y(d[1]))
+          .y1(() => y(0)),
+      )
+      .attr("fill", fill)
+  }
+  return d3n.svgString()
 }

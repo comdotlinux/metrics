@@ -80,30 +80,8 @@ export default async function({login, q}, {conf, data, rest, graphql, plugins, q
     })())
   }
 
-  //Iterate through user's repositories
-  for (const repository of data.user.repositories.nodes) {
-    //Simple properties with totalCount
-    for (const property of ["watchers", "stargazers", "issues_open", "issues_closed", "pr_open", "pr_closed", "pr_merged", "releases", "deployments", "environments"])
-      computed.repositories[property] += repository[property]?.totalCount ?? 0
-    //Forks
-    computed.repositories.forks += repository.forkCount
-    if (repository.isFork)
-      computed.repositories.forked++
-    //License
-    if (repository.licenseInfo) {
-      computed.licenses.used[repository.licenseInfo.spdxId] = (computed.licenses.used[repository.licenseInfo.spdxId] ?? 0) + 1
-      computed.licenses.about[repository.licenseInfo.spdxId] = repository.licenseInfo
-    }
-  }
-
-  //Total disk usage
-  computed.diskUsage = `${imports.format.bytes(data.user.repositories.totalDiskUsage * 1000)}`
-
-  //Compute licenses stats
-  computed.licenses.favorite = Object.entries(computed.licenses.used).sort(([_an, a], [_bn, b]) => b - a).slice(0, 1).map(([name, _value]) => name) ?? ""
-
-  //Compute total commits
-  computed.commits += data.user.contributionsCollection.totalCommitContributions + data.user.contributionsCollection.restrictedContributionsCount
+  //Aggregate repositories-derived metrics
+  aggregate({data, computed, imports})
 
   //Compute registration date
   const now = Date.now()
@@ -179,4 +157,37 @@ export default async function({login, q}, {conf, data, rest, graphql, plugins, q
 
   //Results
   return null
+}
+
+/**Aggregate repositories-derived metrics (also used by the multi-account merge to recompute them from a union of repositories) */
+export function aggregate({data, computed, imports}) {
+  //Reset
+  Object.assign(computed.repositories, {watchers: 0, stargazers: 0, issues_open: 0, issues_closed: 0, pr_open: 0, pr_closed: 0, pr_merged: 0, forks: 0, forked: 0, releases: 0, deployments: 0, environments: 0})
+  computed.licenses.used = {}
+  computed.licenses.about = {}
+  computed.commits = 0
+  //Iterate through user's repositories
+  for (const repository of data.user.repositories.nodes) {
+    //Simple properties with totalCount
+    for (const property of ["watchers", "stargazers", "issues_open", "issues_closed", "pr_open", "pr_closed", "pr_merged", "releases", "deployments", "environments"])
+      computed.repositories[property] += repository[property]?.totalCount ?? 0
+    //Forks
+    computed.repositories.forks += repository.forkCount
+    if (repository.isFork)
+      computed.repositories.forked++
+    //License
+    if (repository.licenseInfo) {
+      computed.licenses.used[repository.licenseInfo.spdxId] = (computed.licenses.used[repository.licenseInfo.spdxId] ?? 0) + 1
+      computed.licenses.about[repository.licenseInfo.spdxId] = repository.licenseInfo
+    }
+  }
+
+  //Total disk usage
+  computed.diskUsage = `${imports.format.bytes(data.user.repositories.totalDiskUsage * 1000)}`
+
+  //Compute licenses stats
+  computed.licenses.favorite = Object.entries(computed.licenses.used).sort(([_an, a], [_bn, b]) => b - a).slice(0, 1).map(([name, _value]) => name) ?? ""
+
+  //Compute total commits
+  computed.commits += data.user.contributionsCollection.totalCommitContributions + data.user.contributionsCollection.restrictedContributionsCount
 }
