@@ -86,4 +86,39 @@ with:
   plugin_isocalendar_duration: full-year
 
 ```
+```yaml
+name: Multiple accounts
+uses: lowlighter/metrics@latest
+with:
+  filename: metrics.accounts.svg
+  token: |
+    ${{ secrets.METRICS_TOKEN }}
+    ${{ secrets.METRICS_TOKEN_WORK }}
+  base: header, activity, community, repositories
+  plugin_isocalendar: yes
+  plugin_languages: yes
+  plugin_followup: yes
+  plugin_lines: yes
+  plugin_calendar: yes
+
+```
+```yaml
+name: Multiple accounts with user ignored
+uses: lowlighter/metrics@latest
+with:
+  filename: metrics.accounts.user.svg
+  user: octocat
+  token: |
+    ${{ secrets.METRICS_TOKEN }}
+    ${{ secrets.METRICS_TOKEN_WORK }}
+  base: header, activity, community, repositories
+  plugin_isocalendar: yes
+  plugin_languages: yes
+  plugin_followup: yes
+  plugin_lines: yes
+  plugin_calendar: yes
+  plugin_activity: yes
+  plugin_habits: yes
+
+```
 <!--/examples-->

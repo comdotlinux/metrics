@@ -171,7 +171,7 @@ function testcase(name, env, args) {
   const result = {...step, ...context, name: `${name} - ${step.name ?? "(unnamed)"}`}
   for (const [k, v] of Object.entries(result.with)) {
     if ((env === "test") && (secrets.$regex.test(v)))
-      result.with[k] = v.replace(secrets.$regex, secrets[v.match(secrets.$regex)?.groups?.secret])
+      result.with[k] = v.replace(new RegExp(secrets.$regex.source, "g"), (match, secret) => secrets[secret] ?? match)
   }
 
   if (env === "prod") {

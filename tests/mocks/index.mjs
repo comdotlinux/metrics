@@ -10,15 +10,12 @@ import urls from "url"
 //Mocked state
 let mocked = false
 
-//Mocking
-export default async function({graphql, rest}) {
-  //Check if already mocked
-  if (mocked)
-    return {graphql, rest}
-  mocked = true
-  process.env.METRICS_MOCKED = true
-  console.debug("metrics/compute/mocks > mocking")
+//Deterministic faker seed per login
+//eslint-disable-next-line no-bitwise
+const seed = s => [...`${s}`].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7)
 
+//Mocking
+export default async function({graphql, rest, token = null}) {
   //Load mocks
   const __mocks = paths.join(paths.dirname(urls.fileURLToPath(import.meta.url)))
   const mock = async ({directory, mocks}) => {
@@ -47,6 +44,7 @@ export default async function({graphql, rest}) {
         //Arguments
         const [query] = args
         const login = query.match(/login: "(?<login>.*?)"/)?.groups?.login ?? faker.internet.userName()
+        faker.seed(seed(login))
 
         //Search for mocked query
         for (const mocked of Object.keys(mocks.github.graphql)) {
@@ -75,7 +73,10 @@ export default async function({graphql, rest}) {
               if (mocks.github.rest?.[section]?.[property]) {
                 return async function() {
                   console.debug(`metrics/mocking > rest.${section}.${property}`)
-                  return mocks.github.rest[section][property]({faker}, target, null, arguments)
+                  const [{username = null, owner = null} = {}] = arguments
+                  if (username || owner)
+                    faker.seed(seed(username || owner))
+                  return mocks.github.rest[section][property]({faker, token}, target, null, arguments)
                 }
               }
               return Reflect.get(target, property)
@@ -86,6 +87,13 @@ export default async function({graphql, rest}) {
       },
     })
   }
+
+  //Global patches below are installed once only
+  if (mocked)
+    return {graphql, rest}
+  mocked = true
+  process.env.METRICS_MOCKED = true
+  console.debug("metrics/compute/mocks > mocking")
 
   //Axios mocking
   {

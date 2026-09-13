@@ -154,3 +154,10 @@ Lichess, Nightscout, PageSpeed Insights, PoopMap, Spotify, Stack Exchange, Steam
 Finance, AniList, Hashnode, LeetCode and YouTube Music.
 
 <!-- MANUAL: Any manually added notes below this line are preserved on regeneration -->
+
+- Multi-account mocking: `api/github/rest/users/getAuthenticated.mjs` maps the token being mocked to a login:
+  `MOCKED_TOKEN` -> the repository owner (`GITHUB_REPOSITORY`, else `octocat`), `MOCKED_TOKEN_<X>` -> lowercased
+  `x` (`work`, `fail`). `base.user.mjs` throws for login `fail` so a forced secondary failure can be tested.
+  `faker` is seeded per login (graphql `login:`, rest `username`/`owner`), so each account gets stable data.
+  `mocks({graphql, rest, token})` wraps every api object passed to it; only the global axios/rss/google-maps
+  patches are once-only.
