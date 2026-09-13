@@ -9,6 +9,7 @@ on:
 jobs:
   clean:
     name: Clean untagged docker images
+    if: github.repository == 'lowlighter/metrics'
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:

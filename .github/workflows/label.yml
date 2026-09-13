@@ -5,6 +5,7 @@ on: pull_request_target
 jobs:
   label:
     name: Label issue and pull requests
+    if: github.repository == 'lowlighter/metrics'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/labeler@v4

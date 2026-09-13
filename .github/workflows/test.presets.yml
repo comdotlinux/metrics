@@ -13,6 +13,7 @@ jobs:
 
   test:
     name: Test
+    if: github.repository == 'lowlighter/metrics'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository

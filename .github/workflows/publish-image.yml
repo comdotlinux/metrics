@@ -1,0 +1,42 @@
+name: Publish image
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    name: Publish image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Login to GitHub registry
+        run: echo "${{ github.token }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: Compute image tag
+        run: |
+          set -euo pipefail
+          VERSION=$(grep -Po '(?<="version": ").*(?=")' package.json)
+          TAG=v$(echo "$VERSION" | sed -r 's/^([0-9]+[.][0-9]+).*/\1/')
+          RELEASED=yes
+          if [[ "$VERSION" == *-beta ]]; then
+            TAG="$TAG-beta"
+            RELEASED=no
+          fi
+          echo "Version: $VERSION | Image tag: $TAG | Released: $RELEASED"
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+          echo "RELEASED=$RELEASED" >> "$GITHUB_ENV"
+      - name: Build and publish docker image
+        run: |
+          set -euo pipefail
+          IMAGE=$(echo "ghcr.io/${{ github.repository }}" | tr "[:upper:]" "[:lower:]")
+          docker build -t "$IMAGE:$TAG" .
+          docker push "$IMAGE:$TAG"
+          if [[ "$RELEASED" == "yes" ]]; then
+            docker tag "$IMAGE:$TAG" "$IMAGE:latest"
+            docker push "$IMAGE:latest"
+          fi
