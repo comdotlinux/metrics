@@ -463,6 +463,9 @@ On forks, this feature is disable to take into account any changes you made on i
 <p>No scopes are required by default, though some plugins and features may require additional scopes.</p>
 <p>When using a configuration which does not requires a GitHub PAT, it is possible to pass <code>NOT_NEEDED</code> instead.
 When doing so, any settings which defaults on user fetched values will not be templated (e.g. <code>.user.*</code>) and will usually need to be set manually.</p>
+<p>Several tokens may be provided, separated by newlines or commas (use <code>token: |</code> and one <code>${{ secrets.X }}</code> per line).
+The first token&#39;s owner is the primary account; the other accounts contribute nameless data only (contribution calendars, counters, language bytes, followup counts, lines of code).
+When several tokens are given, <code>user</code> is ignored.</p>
 <img width="900" height="1" alt=""></td>
   </tr>
   <tr>
@@ -474,7 +477,8 @@ When doing so, any settings which defaults on user fetched values will not be te
   <tr>
     <td nowrap="nowrap"><h4><code>user</code></h4></td>
     <td rowspan="2"><p>GitHub username</p>
-<p>Defaults to <a href="/source/plugins/core/README.md#token"><code>token</code></a> owner username.</p>
+<p>Defaults to <a href="/source/plugins/core/README.md#token"><code>token</code></a> owner username.
+Ignored when several tokens are provided (the primary account is the first token&#39;s owner).</p>
 <img width="900" height="1" alt=""></td>
   </tr>
   <tr>

@@ -106,7 +106,7 @@ function quit(reason) {
     if (!metadata.env.ghactions) {
       info("Docker environment", "(enabled)")
       process.env.INPUT_OUTPUT_ACTION = process.env.INPUT_OUTPUT_ACTION ?? "none"
-      process.env.INPUT_COMMITTER_TOKEN = process.env.INPUT_COMMITTER_TOKEN ?? process.env.INPUT_TOKEN
+      process.env.INPUT_COMMITTER_TOKEN = process.env.INPUT_COMMITTER_TOKEN ?? process.env.INPUT_TOKEN?.split(/[\n,]/)[0].trim()
       process.env.GITHUB_REPOSITORY = process.env.GITHUB_REPOSITORY ?? "octocat/hello-world"
     }
 
@@ -167,64 +167,75 @@ function quit(reason) {
     info("Debug flags", dflags)
     q["debug.flags"] = dflags.join(" ")
 
-    //Token for data gathering
-    info("GitHub token", token, {token: true})
-    //A GitHub token should start with "gh" along an additional letter for type
-    //See https://github.blog/2021-04-05-behind-githubs-new-authentication-token-formats
-    info("GitHub token format", /^github_pat_/.test(token) ? "fine-grained" : /^gh[pousr]_/.test(token) ? "classic" : "legacy or invalid")
-    if (!token)
+    //Tokens for data gathering (first token is the primary account, others contribute nameless data only)
+    const tokens = token.split(/[\n,]/).map(t => t.trim()).filter(t => t)
+    if (!tokens.length)
       throw new Error("You must provide a valid GitHub personal token to gather your metrics (see https://github.com/lowlighter/metrics/blob/master/.github/readme/partials/documentation/setup/action.md for more informations)")
-    conf.settings.token = token
-    const api = {}
-    const resources = {}
-    api.graphql = octokit.graphql.defaults({headers: {authorization: `token ${token}`}, baseUrl: _github_api_graphql || undefined})
-    info("GitHub GraphQL API", "ok")
-    info("GitHub GraphQL API endpoint", api.graphql.baseUrl)
-    const octoraw = github.getOctokit(token, {baseUrl: _github_api_rest || undefined})
-    api.rest = octoraw.rest
-    api.rest.request = octoraw.request
-    info("GitHub REST API", "ok")
-    info("GitHub REST API endpoint", api.rest.baseUrl)
-    //Apply mocking if needed
-    if (mocked) {
-      Object.assign(api, await mocks(api))
-      info("Use mocked API", true)
+    info("GitHub tokens", tokens.length)
+    if (metadata.env.ghactions) {
+      for (const t of tokens)
+        core.setSecret(t)
     }
-    //Test token validity and requests count
-    else if (!/^NOT_NEEDED$/.test(token)) {
-      //Check rate limit
-      let ratelimit = false
-      const {data} = await api.rest.rateLimit.get().catch(() => ({data: {resources: {}}}))
-      Object.assign(resources, data.resources)
-      for (const type of ["core", "graphql", "search"]) {
-        const name = {core: "REST", graphql: "GraphQL", search: "Search"}[type]
-        const quota = {core: _quota_required_rest, graphql: _quota_required_graphql, search: _quota_required_search}[type] ?? 1
-        info(`API requests (${name})`, resources[type] ? `${resources[type].remaining}/${resources[type].limit}${quota ? ` (${quota}+ required)` : ""}` : "(unknown)")
-        if ((resources[type]) && (resources[type].remaining < quota))
-          ratelimit = true
+    ;[conf.settings.token] = tokens
+    const accounts = []
+    for (const [i, t] of tokens.entries()) {
+      info(`GitHub token #${i + 1}`, t, {token: true})
+      //A GitHub token should start with "gh" along an additional letter for type
+      //See https://github.blog/2021-04-05-behind-githubs-new-authentication-token-formats
+      info("GitHub token format", /^github_pat_/.test(t) ? "fine-grained" : /^gh[pousr]_/.test(t) ? "classic" : "legacy or invalid")
+      const api = {}
+      const resources = {}
+      api.graphql = octokit.graphql.defaults({headers: {authorization: `token ${t}`}, baseUrl: _github_api_graphql || undefined})
+      info("GitHub GraphQL API", "ok")
+      info("GitHub GraphQL API endpoint", api.graphql.baseUrl)
+      const octoraw = github.getOctokit(t, {baseUrl: _github_api_rest || undefined})
+      api.rest = octoraw.rest
+      api.rest.request = octoraw.request
+      api.rest.auth = octoraw.auth
+      info("GitHub REST API", "ok")
+      info("GitHub REST API endpoint", api.rest.baseUrl)
+      //Apply mocking if needed
+      if (mocked) {
+        Object.assign(api, await mocks({...api, token: t}))
+        info("Use mocked API", true)
       }
-      if (ratelimit) {
-        console.warn("::warning::It seems you have reached your API requests limit or configured quota. Please retry later.")
-        info.break()
-        console.log("Nothing can be done currently, thanks for using metrics!")
-        quit("skipped")
-      }
-      //Check scopes
-      try {
-        const {headers} = await api.rest.request("HEAD /")
-        if (!("x-oauth-scopes" in headers)) {
-          throw new Error(
-            'GitHub API did not send any "x-oauth-scopes" header back from provided "token". It means that your token may not be valid or you\'re using GITHUB_TOKEN which cannot be used since metrics will fetch data outside of this repository scope. Use a personal access token instead (see https://github.com/lowlighter/metrics/blob/master/.github/readme/partials/documentation/setup/action.md for more informations).',
-          )
+      //Test token validity and requests count
+      else if (!/^NOT_NEEDED$/.test(t)) {
+        //Check rate limit
+        let ratelimit = false
+        const {data} = await api.rest.rateLimit.get().catch(() => ({data: {resources: {}}}))
+        Object.assign(resources, data.resources)
+        for (const type of ["core", "graphql", "search"]) {
+          const name = {core: "REST", graphql: "GraphQL", search: "Search"}[type]
+          const quota = {core: _quota_required_rest, graphql: _quota_required_graphql, search: _quota_required_search}[type] ?? 1
+          info(`API requests (${name})`, resources[type] ? `${resources[type].remaining}/${resources[type].limit}${quota ? ` (${quota}+ required)` : ""}` : "(unknown)")
+          if ((resources[type]) && (resources[type].remaining < quota))
+            ratelimit = true
         }
-        info("Token validity", "seems ok")
+        if (ratelimit) {
+          console.warn("::warning::It seems you have reached your API requests limit or configured quota. Please retry later.")
+          info.break()
+          console.log("Nothing can be done currently, thanks for using metrics!")
+          quit("skipped")
+        }
+        //Check scopes
+        try {
+          const {headers} = await api.rest.request("HEAD /")
+          if (!("x-oauth-scopes" in headers)) {
+            throw new Error(
+              'GitHub API did not send any "x-oauth-scopes" header back from provided "token". It means that your token may not be valid or you\'re using GITHUB_TOKEN which cannot be used since metrics will fetch data outside of this repository scope. Use a personal access token instead (see https://github.com/lowlighter/metrics/blob/master/.github/readme/partials/documentation/setup/action.md for more informations).',
+            )
+          }
+          info("Token validity", "seems ok")
+        }
+        catch {
+          info("Token validity", "(could not verify)")
+        }
       }
-      catch {
-        info("Token validity", "(could not verify)")
-      }
+      accounts.push({login: null, graphql: api.graphql, rest: api.rest, resources})
     }
     //Extract octokits
-    const {graphql, rest} = api
+    const [{graphql, rest, resources}] = accounts
 
     //Check for new versions
     if (_notice_releases) {
@@ -235,16 +246,25 @@ function quit(reason) {
         console.info(`::notice::A new version of metrics (v${latest}) has been released, check it out for even more features!`)
     }
 
-    //GitHub user
-    let authenticated
-    try {
-      authenticated = (await rest.users.getAuthenticated()).data.login
+    //GitHub accounts (owner of each token)
+    for (const [i, account] of accounts.entries()) {
+      try {
+        account.login = (await account.rest.users.getAuthenticated()).data.login
+      }
+      catch {
+        if (tokens.length > 1)
+          throw new Error(`cannot resolve owner of token #${i + 1}`)
+        account.login = github.context.repo.owner
+      }
+      info(`GitHub account #${i + 1}`, account.login)
     }
-    catch {
-      authenticated = github.context.repo.owner
-    }
+    const authenticated = accounts[0].login
     conf.authenticated = authenticated
-    const user = _user || authenticated
+    conf.accounts = accounts
+    conf.debug = debug
+    if ((_user) && (tokens.length > 1))
+      info("GitHub user", "(ignored: multiple tokens, primary is the first token's owner)")
+    const user = tokens.length > 1 ? authenticated : (_user || authenticated)
     info("GitHub account", user)
     if (q.repo)
       info("GitHub repository", `${user}/${q.repo}`)
@@ -257,7 +277,7 @@ function quit(reason) {
     const committer = {}
     if ((!dryrun) && (_action !== "none")) {
       //Compute committer informations
-      committer.token = _token || token
+      committer.token = _token || tokens[0]
       committer.gist = _action === "gist" ? _gist : null
       committer.commit = true
       committer.message = _message.replace(/[$][{]filename[}]/g, filename)
@@ -689,7 +709,7 @@ function quit(reason) {
     }
 
     //Consumed API requests
-    if ((!mocked) && (!/^NOT_NEEDED$/.test(token))) {
+    if ((!mocked) && (!/^NOT_NEEDED$/.test(tokens[0]))) {
       info.break()
       info.section("Consumed API requests")
       info("  * provided that no other app used your quota during execution", "")

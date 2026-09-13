@@ -16,6 +16,10 @@ inputs:
 
       When using a configuration which does not requires a GitHub PAT, it is possible to pass `NOT_NEEDED` instead.
       When doing so, any settings which defaults on user fetched values will not be templated (e.g. `.user.*`) and will usually need to be set manually.
+
+      Several tokens may be provided, separated by newlines or commas (use `token: |` and one `${{ secrets.X }}` per line).
+      The first token's owner is the primary account; the other accounts contribute nameless data only (contribution calendars, counters, language bytes, followup counts, lines of code).
+      When several tokens are given, `user` is ignored.
     type: token
     required: true
 
@@ -24,6 +28,7 @@ inputs:
       GitHub username
 
       Defaults to [`token`](/source/plugins/core/README.md#token) owner username.
+      Ignored when several tokens are provided (the primary account is the first token's owner).
     type: string
     default: ""
     preset: no

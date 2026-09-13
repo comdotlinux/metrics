@@ -90,7 +90,7 @@ export class Analyzer {
     let token
 
     if (process.env.GITHUB_ACTIONS) {
-      token = core.getInput("token")
+      token = (await this.rest?.auth?.())?.token ?? decodeURIComponent(core.getInput("token")).split(/[\n,]/)[0].trim()
     }
 
     let url = /^https?:\/\//.test(repo) ? repo : `https://${token}@github.com/${repo}`
