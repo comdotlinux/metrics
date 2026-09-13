@@ -2,6 +2,7 @@
 import ejs from "ejs"
 import util from "util"
 import * as utils from "./utils.mjs"
+import merge, {MERGED} from "./merge.mjs"
 
 //Setup
 export default async function metrics({login, q}, {graphql, rest, plugins, conf, die = false, verify = false, convert = null, callbacks = null, warnings = []}, {Plugins, Templates}) {
@@ -88,6 +89,36 @@ export default async function metrics({login, q}, {graphql, rest, plugins, conf,
         throw new Error("An error occurred during rendering, dying")
       else
         console.debug(util.inspect(errors, {depth: Infinity, maxStringLength: 256}))
+    }
+
+    //Merge secondary accounts (nameless data only, see merge.mjs)
+    const secondaries = (conf.accounts ?? []).slice(1)
+    if ((secondaries.length) && (q.repo))
+      console.debug(`metrics/compute/${login} > merge > skipped (repository mode)`)
+    else if (secondaries.length) {
+      const sq = {...q, ...Object.fromEntries(Object.keys(Plugins).filter(name => !["base", "core", ...MERGED].includes(name)).map(name => [name, false]))}
+      const {debug} = console
+      for (const [i, account] of secondaries.entries()) {
+        debug(`metrics/compute/${login} > merge > computing ${account.login}`)
+        let cerrors, clone
+        try {
+          if (!conf.debug)
+            console.debug = () => null
+          ;({rendered: clone, errors: cerrors} = await metrics({login: account.login, q: sq}, {graphql: account.graphql, rest: account.rest, plugins, conf: {...conf, accounts: [], authenticated: account.login}, die, convert: "json"}, {Plugins, Templates}))
+        }
+        catch (error) {
+          throw new Error(`account #${i + 2} (${account.login}): ${error.message}`)
+        }
+        finally {
+          console.debug = debug
+        }
+        errors.push(...cerrors.map(error => ({...error, account: account.login})))
+        merge(data, clone, {imports, q, login})
+        debug(`metrics/compute/${login} > merge > ${account.login} merged`)
+      }
+      data.user.accounts = conf.accounts.map(({login}) => login)
+      for (const name of Object.keys(data.plugins).filter(name => (data.plugins[name]) && (!MERGED.includes(name))))
+        console.debug(`metrics/compute/${login}/plugins > ${name} > primary account only (${conf.accounts.length} accounts)`)
     }
 
     //JSON output

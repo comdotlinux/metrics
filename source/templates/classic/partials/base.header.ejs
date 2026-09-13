@@ -3,7 +3,7 @@
     <section>
       <h1 class="field">
         <img class="avatar" src="<%= computed.avatar %>" width="20" height="20" />
-        <span><%= user.name || user.login %></span>
+        <span><%= user.name || user.login %><%= user.accounts?.length > 1 ? ` (${user.accounts.join(" + ")})` : "" %></span>
       </h1>
       <div class="row">
         <section>

@@ -4,6 +4,8 @@ query BaseCalendar {
       contributionCalendar {
         weeks {
           contributionDays {
+            date
+            contributionCount
             color
           }
         }

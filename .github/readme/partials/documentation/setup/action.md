@@ -120,6 +120,35 @@ It is advised to start with [`🧱 core`](/source/plugins/core/README.md) plugin
 
 It is also possible to use [metrics.lecoq.io](https://metrics.lecoq.io) to play with configuration options, preview renders and finally copy the auto-generated workflow code.
 
+### 3️.3️ Multiple accounts
+
+`token` also accepts several personal access tokens (one per line, or comma-separated) to merge metrics from several GitHub accounts into a single render:
+
+```yaml
+      - uses: comdotlinux/metrics@v3.36
+        with:
+          token: |
+            ${{ secrets.METRICS_TOKEN }}
+            ${{ secrets.METRICS_TOKEN_WORK }}
+```
+
+The owner of the first token is the *primary* account: identity, avatar, repositories list and every plugin not listed below come from it (`user` is ignored).
+
+The other accounts contribute **nameless data only**:
+- contribution calendars (header strip, [`📅 isocalendar`](/source/plugins/isocalendar/README.md) and [`📆 calendar`](/source/plugins/calendar/README.md))
+- base counters (followers, stars, commits, contributed-to repositories, etc.)
+- [`🈷️ languages`](/source/plugins/languages/README.md) bytes
+- [`🎟️ followup`](/source/plugins/followup/README.md) counts
+- [`👨‍💻 lines`](/source/plugins/lines/README.md) of code totals
+
+Repository names, owners and organizations of secondary accounts never appear in the output.
+
+> 💡 Colours of merged calendars are re-bucketed by quartile of the merged daily maximum (an approximation of GitHub's per-user contribution levels)
+
+> ⚠️ With a non-default `repositories_affiliations`, a repository shared by two accounts can count twice in languages bytes
+
+> ⚠️ A failing secondary token fails the whole run (by design, so numbers are never silently un-combined)
+
 ## 4️ Add images to your profile `README.md`
 
 Update profile `README.md` to include rendered image (filename may differ if `filename` option has been set, use the correct path accordingly).

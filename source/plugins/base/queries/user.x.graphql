@@ -46,6 +46,8 @@ query BaseUserX {
       contributionCalendar {
         weeks {
           contributionDays {
+            date
+            contributionCount
             color
           }
         }
