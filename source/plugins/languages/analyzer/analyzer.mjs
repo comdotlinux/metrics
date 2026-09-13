@@ -4,7 +4,7 @@ import os from "os"
 import paths from "path"
 import git from "simple-git"
 import { filters } from "../../../app/metrics/utils.mjs"
-import core from "@actions/core"
+import * as core from "@actions/core"
 
 /**Analyzer */
 export class Analyzer {

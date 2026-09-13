@@ -1,7 +1,7 @@
 //Imports
-import core from "@actions/core"
-import github from "@actions/github"
-import octokit from "@octokit/graphql"
+import * as core from "@actions/core"
+import * as github from "@actions/github"
+import * as octokit from "@octokit/graphql"
 import processes from "child_process"
 import fs from "fs/promises"
 import paths from "path"
@@ -174,8 +174,6 @@ function quit(reason) {
     info("GitHub token format", /^github_pat_/.test(token) ? "fine-grained" : /^gh[pousr]_/.test(token) ? "classic" : "legacy or invalid")
     if (!token)
       throw new Error("You must provide a valid GitHub personal token to gather your metrics (see https://github.com/lowlighter/metrics/blob/master/.github/readme/partials/documentation/setup/action.md for more informations)")
-    if (/^github_pat_/.test(token))
-      throw new Error("It seems you're trying to use a fine-grained personal access token. These are currently unsupported as GitHub does not support them (yet?) for GraphQL API authentication (see https://docs.github.com/fr/graphql/guides/forming-calls-with-graphql#authenticating-with-graphql for more informations). Use a classic token instead.")
     conf.settings.token = token
     const api = {}
     const resources = {}

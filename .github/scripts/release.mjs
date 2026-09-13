@@ -1,5 +1,5 @@
 //Imports
-import github from "@actions/github"
+import * as github from "@actions/github"
 import paths from "path"
 import sgit from "simple-git"
 import url from "url"
