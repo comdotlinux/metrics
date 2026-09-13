@@ -283,6 +283,25 @@ export default async function({faker}, target, that, [{username: login, page, pe
         public: true,
       },
       {
+        id: "10000000015",
+        type: "PushEvent",
+        actor: {
+          login,
+        },
+        repo: {
+          name: `${faker.lorem.word()}/${faker.lorem.word()}`,
+        },
+        payload: {
+          before: faker.git.commitSha(),
+          head: faker.git.commitSha(),
+          push_id: faker.number.int(),
+          ref: "refs/heads/main",
+          repository_id: faker.number.int(),
+        },
+        created_at: faker.date.recent({days: 7}),
+        public: true,
+      },
+      {
         id: "10000000012",
         type: "PullRequestEvent",
         actor: {

@@ -20,6 +20,8 @@ Its `README.md` will be displayed on your user profile:
 
 From the `Developer settings` of your account settings, select `Personal access tokens` to create a new token.
 
+Both classic and fine-grained personal access tokens are accepted. Note that fine-grained tokens are scoped to a single resource owner and cannot read Packages or user Projects, so those counters may be lower than with a classic token.
+
 No scopes are required, but additional one may be required depending on which features will be used. Each plugin documentation enumerates which scopes are required to make it work.
 
 As a general rule, the following scopes may be required:
