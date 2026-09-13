@@ -1057,7 +1057,7 @@ Be sure to disable this option when asking for help or submitting bug reports.</
     <td nowrap="nowrap"><h4><code>use_prebuilt_image</code></h4></td>
     <td rowspan="2"><p>Use pre-built docker image from <a href="https://github.com/lowlighter/metrics/pkgs/container/metrics">GitHub container registry</a></p>
 <p>It allows to save build time and make job significantly faster, and there is almost no reason to disable this settings.
-This option has no effects on forks (images will always be rebuilt from Dockerfile)</p>
+On forks, the pre-built image <code>ghcr.io/&lt;owner&gt;/metrics:&lt;tag&gt;</code> is pulled from the fork&#39;s own registry when it exists, and the image is rebuilt from Dockerfile otherwise</p>
 <img width="900" height="1" alt=""></td>
   </tr>
   <tr>
