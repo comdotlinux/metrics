@@ -7,8 +7,8 @@ COPY . /metrics
 WORKDIR /metrics
 
 # Environment variables
-ENV PUPPETEER_SKIP_DOWNLOAD true
-ENV PUPPETEER_BROWSER_PATH "google-chrome-stable"
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+ENV PUPPETEER_BROWSER_PATH=/usr/bin/google-chrome-stable
 
 # Setup
 RUN chmod +x /metrics/source/app/action/index.mjs \
