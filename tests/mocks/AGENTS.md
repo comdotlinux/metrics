@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-09-13 | Updated: 2026-09-13 -->
+<!-- Generated: 2026-09-13 | Updated: 2026-09-14 -->
 
 # tests/mocks
 
@@ -73,7 +73,7 @@ before the brace.
 | `sponsorships` (2) | `sponsorships.default.mjs` (total sponsored cents), `sponsorships.all.mjs` (paginated) |
 | `stargazers` / `stars` (2) | `stargazers.default.mjs` (paginated stargazers), `stars.default.mjs` (`starredRepositories` with `starredAt`) |
 
-### `api/github/rest/` (12 files, octokit REST)
+### `api/github/rest/` (13 files, octokit REST)
 | File | Mocks |
 |------|-------|
 | `request.mjs` | `rest.request`: a `HEAD /` response carrying `x-oauth-scopes: repo`, and `GET .../commits/MOCKED_SHA` with a patch body. See the caveat in "Working In This Directory": this file is currently unreachable. |
@@ -86,6 +86,7 @@ before the brace.
 | `repos/getViews.mjs` | `rest.repos.getViews`, traffic plugin |
 | `repos/listCommits.mjs` | `rest.repos.listCommits` with `{page, per_page, owner, repo}` |
 | `repos/listContributors.mjs` | `rest.repos.listContributors` |
+| `users/getAuthenticated.mjs` | `rest.users.getAuthenticated`, the per-token login resolution used by multi-account runs (see the note below the MANUAL marker); throws a 401 for anything that is not `MOCKED_TOKEN` / `MOCKED_TOKEN_<X>` |
 | `users/getByUsername.mjs` | `rest.users.getByUsername` |
 | `users/listGpgKeysForUser.mjs` | `rest.users.listGpgKeysForUser` |
 

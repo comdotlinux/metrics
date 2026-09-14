@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-09-13 | Updated: 2026-09-13 -->
+<!-- Generated: 2026-09-13 | Updated: 2026-09-14 -->
 
 # source/plugins
 
@@ -109,6 +109,16 @@ else runs and `core` is the global configuration namespace plus the plugin sched
   `highlight`, `htmlescape`/`htmlunescape`, `language`, `filters.repo`/`filters.text`/`filters.github`, `shuffle`,
   `wait`, `puppeteer.launch`, `run`/`spawn`/`which`, `git`, `fs`, `os`, `paths`, `minimatch`, `d3`/`Graph`/`D3node`,
   `sharp`, `emoji`, `opengraph`, `record`/`gif`, `svg`.
+- **Multi-account merging.** When several tokens are passed (`token: |` with one PAT per line), every secondary
+  account is computed by a recursive `metrics()` call and folded into the primary's data by
+  `source/app/metrics/merge.mjs`. Only the plugins listed in its `MERGED` export
+  (`isocalendar`, `calendar`, `languages`, `followup`, `lines`) are merged; **every other plugin is
+  primary-only**, so its numbers describe the first token's account alone even when the surrounding
+  base counters cover all accounts. Adding a plugin to `MERGED` means writing its merge rule in `merge.mjs`
+  by hand, and that rule must never write a secondary repository name, owner login or organization name into
+  `data` (the JSON output serialises everything): only `data.user.accounts` may name a secondary. Merge rules
+  usually need a behaviour-preserving named export from the plugin so the merged values can be recomputed
+  (see `core` `aggregate`, `isocalendar` `statistics`/`render`, `languages` `format`, `lines` `history`).
 - **Adding a plugin.** 1) `npm run quickstart -- plugin <name>` scaffolds `source/plugins/community/<name>/` with
   `index.mjs`, `metadata.yml`, `examples.yml` and `README.md` from `.github/scripts/quickstart/plugin/`.
   2) Fill `metadata.yml`: `name`, `category`, `description`, `index`, `supports`, `scopes`, and one

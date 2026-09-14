@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-09-13 | Updated: 2026-09-13 -->
+<!-- Generated: 2026-09-13 | Updated: 2026-09-14 -->
 
 # core
 
@@ -19,7 +19,7 @@ Because `metadata.plugin` treats `category: core` specially, these inputs are re
 | File | Description |
 |------|-------------|
 | `index.mjs` | The scheduler and common-metrics computer. Reads `config.animations`, `config.display`, `config.timezone`, `config.base64` and `debug.flags`; calls `imports.metadata.templates[template].check({q, account, format})`; builds `data.computed`; loops over `imports.plugins` pushing `data.plugins[name] = await imports.plugins[name](...)` into `pending`; aggregates per-repository totals, licenses, disk usage, registration age and cakeday; reads token scopes from the `x-oauth-scopes` header of `rest.request("HEAD /")`; sets `data.meta`; applies debug flags. Always returns `null`. |
-| `metadata.yml` | 606 lines, 50 inputs. `category: core`, `supports: user, organization, repository`, `scopes: []`. Inputs after the `🚧 Options below are mostly used for testing` comment carry `testing: yes` and are excluded from presets. |
+| `metadata.yml` | 611 lines, 50 inputs. `category: core`, `supports: user, organization, repository`, `scopes: []`. Inputs after the `🚧 Options below are mostly used for testing` comment carry `testing: yes` and are excluded from presets. |
 | `examples.yml` | Seven examples (organization, large display, JSON output, PNG output, insights, presets, plugin error) that become the repository-root README demos and `tests/cases/core.plugin.yml`. The presets example is `prod.skip`, the plugin-error example is `test.skip`. |
 | `README.md` | GENERATED from `metadata.yml` + `examples.yml` by `npm run build`. Never hand-edit. |
 
@@ -35,7 +35,8 @@ Because `metadata.plugin` treats `category: core` specially, these inputs are re
   (`metrics.run.puppeteer.user.css`), `extras_js` (`metrics.run.puppeteer.user.js`), `config_presets`
   (`metrics.setup.community.presets`) and `verify` (`metrics.npm.optional.libxml2`).
 - **Option groups.** Auth and target: `token` (accepts the literal `NOT_NEEDED`, which sets
-  `conf.settings.notoken`), `user`, `repo`. Output: `filename`, `config_output`
+  `conf.settings.notoken`, and SEVERAL tokens separated by newlines or commas — see `source/app/action/AGENTS.md`),
+  `user` (ignored when several tokens are given), `repo`. Output: `filename`, `config_output`
   (`auto|svg|png|jpeg|json|markdown|markdown-pdf|insights`), `markdown`, `markdown_cache`, `optimize`,
   `output_condition`. Publishing: `output_action`
   (`none|commit|pull-request[-merge|-squash|-rebase]|gist`), `committer_token`, `committer_branch`,
@@ -50,7 +51,8 @@ Because `metadata.plugin` treats `category: core` specially, these inputs are re
   `--halloween` and `--winter` rewrite calendar colors to `--color-calendar-<scheme>-graph-day-Lx-bg` CSS
   variables, both in `computed.calendar` and, in a promise appended to `pending` that awaits the other plugins,
   inside `data.plugins.isocalendar.svg` and `data.plugins.calendar.years`; only the first of the two schemes is
-  applied. `--error` throws `Failed as requested by --error flag`. The `--puppeteer-debug`,
+  applied. With several tokens neither scheme survives: `source/app/metrics/merge.mjs` runs after the plugins and
+  re-colours the merged calendars from its own default palette. `--error` throws `Failed as requested by --error flag`. The `--puppeteer-debug`,
   `--puppeteer-disable-headless` and `--puppeteer-wait-{load,domcontentloaded,networkidle0,networkidle2}` flags
   are consumed in `source/app/metrics/index.mjs`, not here, and only when `conf.settings.debug` or
   `GITHUB_ACTIONS` is set.
@@ -62,6 +64,12 @@ Because `metadata.plugin` treats `category: core` specially, these inputs are re
 - **`data.computed`** is the shared aggregate other plugins and partials read: `commits`, `sponsorships`,
   `licenses.{favorite,used,about}`, `token.scopes`, `repositories.*` totals, `diskUsage`, `registered`,
   `registration`, `cakeday`, `calendar` (last 14 days), `avatar` (base64, with a 1x1 transparent PNG fallback).
+- **`index.mjs` also named-exports `aggregate({data, computed, imports})`** — the repositories-derived part of
+  `data.computed` (resets then recomputes `computed.repositories.*`, `licenses.used`/`about`/`favorite`,
+  `diskUsage` and `commits` from `data.user.repositories.nodes`). It is a behaviour-preserving extraction of code
+  that used to be inline, and `source/app/metrics/merge.mjs` imports it to recompute those totals over the union
+  of every merged account's repositories. Changing its signature, or making it accumulate instead of resetting
+  first, breaks multi-account merging.
 - `config_base64: no` replaces `imports.imgb64` with an identity function for the rest of the render, so every
   plugin that inlines images is affected globally.
 

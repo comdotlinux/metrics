@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-09-13 | Updated: 2026-09-13 -->
+<!-- Generated: 2026-09-13 | Updated: 2026-09-14 -->
 
 # code
 
@@ -26,6 +26,9 @@ referenced commit, flattens the commits into per-file patches, discards patches 
 - The authorship filter is `data.shared["commits.authoring"]` (from `base`, defaulting to `.user.login`)
   matched case-insensitively as a substring against the commit author's `login`, `email` and `name`. If a
   snippet never appears for a real account, that list is usually why.
+- `PushEvent` payloads no longer always carry a `commits` array, so the flatMap is `(payload.commits ?? [])`
+  (the same guard upstream PR 1834 added to `activity` and `habits`; this plugin and
+  `source/plugins/languages/analyzer/recent.mjs` were the two remaining unguarded consumers).
 - Commit fetching is one `rest.request(commit.url)` per commit in every push event of every page, so
   `plugin_code_load` is expensive; the default of 400 is already 4 pages of events plus one request per commit.
 - `imports.language({filename, patch, prefix: login})` runs `linguist-js` over the patch content and returns a

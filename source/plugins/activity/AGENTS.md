@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-09-13 | Updated: 2026-09-13 -->
+<!-- Generated: 2026-09-13 | Updated: 2026-09-14 -->
 
 # activity
 
@@ -32,6 +32,11 @@ normalized event shapes (`push`, `issue`, `pr`, `review`, `comment`, `ref/create
   `visibility`, then per-event `imports.filters.repo(repo, skipped)` and `imports.filters.text(user, ignored)`,
   then the `filter` allowlist, then `slice(0, limit)`. The skipped and ignored lists are the plugin inputs
   concatenated with `data.shared["repositories.skipped"]` and `data.shared["users.ignored"]`.
+- **Modern events can arrive without the sub-objects the branches destructure** (upstream PR 1834): a `PushEvent`
+  payload may carry no `commits` array, and `CommitCommentEvent`, `IssueCommentEvent`, `IssuesEvent`, `MemberEvent`
+  and `PullRequestEvent` payloads may have no `user`/`member`. Hence the `payload.commits ?? []` guard and the
+  `if (!payload.<x>?.user) return null` early returns before each destructuring; a new branch that destructures
+  `payload` needs the same guard or a single anonymised event crashes the whole plugin.
 - `PushEvent` drops commits whose author email is ignored, and when the last commit message starts with
   `Merge branch ` it keeps only that one commit. SHAs are truncated to 7 characters.
 - `days: 0` is translated to `Infinity`, which means "no age limit", not "no events".

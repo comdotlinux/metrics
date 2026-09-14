@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-09-13 | Updated: 2026-09-13 -->
+<!-- Generated: 2026-09-13 | Updated: 2026-09-14 -->
 
 # source/plugins/languages/analyzer
 
@@ -31,6 +31,9 @@ reachable from the command line without the rest of the engine through `cli.mjs`
   key file); only the actual `--import` is skipped.
 - `authoring` is mutated by `gpgarmor()` - emails discovered on the user's GPG keys are appended, so the effective author
   filter is wider than `commits_authoring` alone.
+- `recent.mjs` flattens push events with `payload.commits ?? []`: modern `PushEvent` payloads do not always carry a
+  `commits` array (the same guard upstream PR 1834 added to `activity` and `habits`). Drop it and every mocked or live
+  run that meets one of those events throws.
 - `recent.mjs` filters by `committer.email` against `authoring`, while `indepth.mjs` filters by `git log --author`/`--grep`.
   The two modes can legitimately disagree about which commits belong to the user.
 - `analyzer.mjs` imports `filters` from `../../../app/metrics/utils.mjs` and `core` from `@actions/core` directly rather

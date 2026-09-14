@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-09-13 | Updated: 2026-09-13 -->
+<!-- Generated: 2026-09-13 | Updated: 2026-09-14 -->
 
 # followup
 
@@ -36,6 +36,12 @@ eight extra `search` queries per repository to separate community contributions 
   add zeros there.
 - Indepth mode is gated twice: the input must be `yes` **and** `imports.metadata.plugins.followup.extras("indepth", {extras})`
   must pass, which on web instances requires `metrics.api.github.overuse` in the instance `extras` settings.
+- **Those getters are why the multi-account merge only sums this plugin's data properties.** `issues.open/closed`
+  and `pr.open/closed/merged` read `computed.repositories.*`, which `source/app/metrics/merge.mjs` has already
+  recomputed over the union of all accounts' repositories through `core`'s `aggregate()`; the merge therefore skips
+  every property that has a getter (`Object.getOwnPropertyDescriptor(...).get`) and only adds `drafts`, `skipped`,
+  the `collaborators.*` counts and the `user` section. Turning one of those getters into a plain assigned value
+  would make the merged render double count it.
 - Changing options requires `npm run build` to regenerate `README.md`, `action.yml`, `settings.example.json` and
   `tests/cases/followup.plugin.yml`.
 

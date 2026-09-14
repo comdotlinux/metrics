@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-09-13 | Updated: 2026-09-13 -->
+<!-- Generated: 2026-09-13 | Updated: 2026-09-14 -->
 
 # source/app
 
@@ -25,6 +25,11 @@ that CONTRIBUTING.md asks you to avoid touching. Front-end-only changes (new act
 route) stay in `action/` or `web/`. Nothing in this tree declares plugin or template options: those come from
 each `source/plugins/*/metadata.yml` and `source/templates/*/metadata.yml`, parsed by `metrics/metadata.mjs`.
 
+Multi-account runs cross both layers: `action/index.mjs` splits the `token` input on newlines/commas, resolves
+one `{login, graphql, rest, resources}` per token and puts the deduplicated list in `conf.accounts` (first =
+primary), and `metrics/index.mjs` then recomputes every secondary account through a recursive `metrics()` call
+and folds it into the primary `data` via `metrics/merge.mjs` before anything is rendered.
+
 ### Testing Requirements
 `npm run test-metrics` runs `tests/metrics.test.js`, which exercises all three lanes (Action, web instance,
 browser placeholder) against `tests/cases/*.yml` with mocked APIs. Mocked action run:
@@ -42,6 +47,7 @@ without a space. Debug logs follow `console.debug("metrics/<area>/<login> > mess
 `package.json` at repo root.
 
 ### External
-Node 20 runtime; see each subdirectory for its own npm dependencies.
+Node 22 runtime (`.tool-versions` pins `nodejs 22.23.2`, matching `node:22-bookworm-slim` in the
+`Dockerfile`); see each subdirectory for its own npm dependencies.
 
 <!-- MANUAL: Any manually added notes below this line are preserved on regeneration -->

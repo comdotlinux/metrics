@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-09-13 | Updated: 2026-09-13 -->
+<!-- Generated: 2026-09-13 | Updated: 2026-09-14 -->
 
 # achievements
 
@@ -27,7 +27,7 @@ and truncates the resulting list.
 
 ## Skipped subdirectories
 - `queries/` — no AGENTS.md: `setup.mjs` loads every file in it as a GraphQL query. Contents:
-  - `achievements.graphql` (`AchievementsDefault`, `$login`) — the default query (`queries.achievements()`): first public repository and total count, first fork and total, most-starred repository, first pull request and total, first pull request review and total, projects, packages, organizations, gists, starred repositories, followers, following, bio, status, sponsorships as sponsor, and discussions started / commented / answered. Several `nodes {name}` blocks are commented out because they would need extra token scopes.
+  - `achievements.graphql` (`AchievementsDefault`, `$login`) — the default query (`queries.achievements()`): first public repository and total count, first fork and total, most-starred repository, first pull request and total, first pull request review and total, `projectsV2` (upstream PR 1834: the classic `projects` field was removed from the GraphQL API, so `list/users.mjs` reads `user.projectsV2` for the Manager achievement and the field was renamed in `tests/mocks/api/github/graphql/achievements.default.mjs` too), packages, organizations, gists, starred repositories, followers, following, bio, status, sponsorships as sponsor, and discussions started / commented / answered. Several `nodes {name}` blocks are commented out because they would need extra token scopes.
   - `organizations.graphql` (`AchievementsOrganizations`, `$login`) — the organization equivalent: repositories, forks, most-starred repository, projects, packages, `membersWithRole`, sponsorships as sponsor.
   - `ranking.graphql` (`AchievementsRanking`, `$stars`, `$followers`, `$forks`, `$created`) — four `search` counts (`stars:>n` repositories, `followers:>n` users, `forks:>n` repositories, `repos:>n` users) used as the leaderboard numerator.
   - `total.graphql` (`AchievementsTotal`, no variables) — global GitHub counts of issues, repositories and users via `search(query: "created:>1970")`.

@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-09-13 | Updated: 2026-09-13 -->
+<!-- Generated: 2026-09-13 | Updated: 2026-09-14 -->
 
 # source/app/metrics
 
@@ -9,13 +9,15 @@ into a rendered artefact: it picks a template, runs the base plugin and the temp
 promises, then renders EJS into an SVG (or JSON, Markdown, PDF, or an insights HTML page) and hands the SVG to
 puppeteer for height measurement and optional raster conversion. `setup.mjs` discovers templates, plugins and
 GraphQL queries from disk; `metadata.mjs` parses every `metadata.yml` into typed inputs and generated
-documentation; `presets.mjs` resolves `config_presets`; `utils.mjs` is the helper hub injected into every
-template and plugin as `imports`.
+documentation; `presets.mjs` resolves `config_presets`; `merge.mjs` folds secondary accounts into the
+primary's data when several tokens were given; `utils.mjs` is the helper hub injected into every template and
+plugin as `imports`.
 
 ## Key Files
 | File | Description |
 |------|-------------|
-| `index.mjs` | `metrics({login, q}, {graphql, rest, plugins, conf, die, verify, convert, callbacks, warnings}, {Plugins, Templates})`. Validates the template against `conf.settings.templates.enabled`, builds `imports` and the `data` object, honours `debug.flags`, orders partials from `config.order`, runs `Plugins.base` then the template computer, collects errors, then branches per output format. Also carries `metrics.insights` (a fixed JSON query over 13 plugins) and `metrics.insights.output` (puppeteer screenshot of the local insights page). |
+| `index.mjs` | `metrics({login, q}, {graphql, rest, plugins, conf, die, verify, convert, callbacks, warnings}, {Plugins, Templates})`. Validates the template against `conf.settings.templates.enabled`, builds `imports` and the `data` object, honours `debug.flags`, orders partials from `config.order`, runs `Plugins.base` then the template computer, collects errors, merges secondary accounts (see `merge.mjs`), then branches per output format. Also carries `metrics.insights` (a fixed JSON query over 13 plugins) and `metrics.insights.output` (puppeteer screenshot of the local insights page). |
+| `merge.mjs` | `merge(data, clone, {imports, q, login, merged})` (default export) plus `MERGED`, the whitelist of plugins that can be combined across accounts: `["isocalendar", "calendar", "languages", "followup", "lines"]`. Folds a secondary account's JSON clone into the primary's LIVE `data`. |
 | `metadata.mjs` | `metadata({log, diff})` walks `source/plugins` (including `community/`) and `source/templates`, returning `{plugins, templates, packaged, descriptor, env}`. Attaches `metadata.inputs` (flat map of every declared input) and the converters `metadata.to.query` / `metadata.to.yaml`. |
 | `presets.mjs` | Resolves the `config_presets` list. `@name` fetches `https://raw.githubusercontent.com/lowlighter/metrics/presets/<name>/preset.yml`, `https://` fetches the URL, anything else is read from disk but only in the action environment. Only `schema: v1` is accepted; `token` inputs and inputs marked `preset: false` are rejected. |
 | `setup.mjs` | `setup({log, sandbox, community, extras})`. Loads `settings.json` (skipped in sandbox), applies defaults, optionally clones community templates, discovers templates and plugins, loads metadata, resolves modes and allowed outputs, and returns `{Templates, Plugins, conf}`. |
@@ -36,6 +38,35 @@ delimiters and once with `{}`, exposing an async `embed(name, q)` that recursive
 returns a `<img class="metrics-cacheable" data-name=...>` data URI; `markdown-pdf` pipes that through
 `svg.pdf`; everything else renders `image.svg`, applies twemoji/gemoji/octicon substitution, optimizes, and
 resizes.
+
+Multi-account merge. The seam sits in `index.mjs` between the plugin-error check and the `//JSON output`
+branch. When `conf.accounts` (set by the action, one entry per token) has more than one entry, every secondary
+account is recomputed by a RECURSIVE `metrics()` call with `convert: "json"`, `conf.accounts: []` (the
+recursion guard), `authenticated` set to that account, and a query with every plugin disabled except
+`base`/`core` and the `MERGED` whitelist. That inner call's `console.debug` is silenced unless `conf.debug`,
+so the action's error-path debug flush never prints secondary plugin lines. It is fail-closed: a thrown error
+or any plugin error in a secondary aborts the whole render with
+`account #<N> (<login>): <plugins> failed`. The block is skipped entirely in repository mode (`q.repo`).
+Afterwards `data.user.accounts` holds the login list (read by `classic/partials/base.header.ejs`) and one
+debug line per enabled non-merged plugin records that it ran for the primary only.
+
+PRIVACY INVARIANT: no secondary repository name, owner login or organization name may be written into `data` —
+JSON output serialises everything in there, and `data.user.accounts` is the only field allowed to name a
+secondary. `merge.mjs` therefore unions repository nodes into a transient `merged` accumulator owned by the
+caller's loop, never onto `data`, and feeds it to `aggregate()` through a shallow throwaway wrapper.
+
+`merge.mjs` imports NAMED exports from four plugins, so those four signatures are load-bearing engine API, not
+plugin-internal helpers: `aggregate({data, computed, imports})` from `plugins/core`, `statistics(weeks)` and
+`render(weeks, duration)` from `plugins/isocalendar`, `format(languages, {...options, imports, login})` from
+`plugins/languages` and `history(weeks, imports)` from `plugins/lines`. Changing one of them breaks merging
+silently, since the merge path is only covered by `npm run test-merge`, not by the render matrix.
+
+Known approximations of the merge (documented, not bugs): merged calendar colours are re-bucketed by quartile
+of the merged daily maximum rather than GitHub's per-user quantiles; `repositoriesContributedTo` and
+"repositories with contributed commits" are only corrected for the overlap visible in the fetched node lists;
+languages bytes can double-count a repository both accounts see under a non-default
+`repositories_affiliations`; and every plugin outside `MERGED` stays primary-only, so e.g. the stargazers
+chart shows the primary's stars while the merged `Stargazers` counter covers both.
 
 Optimization and verification. `conf.settings.optimize` may be `true` or an array containing `css`, `xml`
 and/or `svg`, selecting `svg.optimize.css` (purgecss on `<style data-optimizable="true">` blocks, then csso),
@@ -83,7 +114,8 @@ and its `template.mjs` is deleted unless `+trust` is set, in which case it is ex
 `npm run test-metrics` (jest, `tests/metrics.test.js`) covers all three lanes; `npm test` adds
 `tests/ci.test.js`, which is what fails when generated files drift. Plugins are backed by the mocks in
 `tests/mocks/api/**` (graphql, rest, axios, rss, google-maps), wired by `tests/mocks/index.mjs`. Cases come
-from each plugin's and template's `examples.yml` via `npm run build`.
+from each plugin's and template's `examples.yml` via `npm run build`. The merge path has its own fast lane:
+`npm run test-merge` (`tests/merge.test.js` + `tests/merge.fixtures.mjs`, no Chrome, no network, ~1s).
 
 ### Common Patterns
 Debug lines are `console.debug("metrics/compute/<login> > message")` and `metrics/setup > ...`,
@@ -119,7 +151,9 @@ resolved `pending` promises rather than thrown, unless `die` is set.
 
 ## Dependencies
 ### Internal
-`source/plugins/**` and `source/templates/**` (read from disk, not imported statically), `settings.json`,
+`source/plugins/**` and `source/templates/**` (read from disk, not imported statically — except `merge.mjs`,
+which statically imports the named exports of `plugins/core`, `plugins/isocalendar`, `plugins/languages` and
+`plugins/lines`), `settings.json`,
 `package.json`, `action.yml` (read back by `metadata.mjs`), `node_modules/@primer/css` (PDF styling).
 Consumed by `source/app/action/index.mjs`, `source/app/web/instance.mjs` and `.github/scripts/build.mjs`.
 

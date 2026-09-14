@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-09-13 | Updated: 2026-09-13 -->
+<!-- Generated: 2026-09-13 | Updated: 2026-09-14 -->
 
 # languages
 
@@ -14,7 +14,7 @@ There is **no `queries/` directory**: the default path reuses base-query data, t
 ## Key Files
 | File | Description |
 |------|-------------|
-| `index.mjs` | Resolves the 18 inputs, applies `colorsets.json` presets, aggregates `repository.languages.edges` byte sizes into `languages.stats`, optionally calls the recent and indepth analyzers, applies `aliases` (language renaming and grouping), then formats both the `favorites` and `recent` sections: filter by `ignored`, sort desc, slice to `limit`, drop entries under `threshold`, optionally fold the remainder into an `Other` entry, and compute each entry's normalized `value` and stacked `x` offset. |
+| `index.mjs` | Named-exports `format(languages, {login, limit, threshold, other, ignored, indepth, colors, customColors, imports})`, the ordering/threshold/colouring pass, imported by `source/app/metrics/merge.mjs`. Resolves the 18 inputs, applies `colorsets.json` presets, aggregates `repository.languages.edges` byte sizes into `languages.stats`, optionally calls the recent and indepth analyzers, applies `aliases` (language renaming and grouping), then formats both the `favorites` and `recent` sections: filter by `ignored`, sort desc, slice to `limit`, drop entries under `threshold`, optionally fold the remainder into an `Other` entry, and compute each entry's normalized `value` and stacked `x` offset. |
 | `analyzers.mjs` | Thin facade: `indepth()` and `recent()` construct `IndepthAnalyzer` / `RecentAnalyzer` from `analyzer/` and call `.run()`. Also the CLI entry point - it checks `/languages.analyzers.mjs$/.test(process.argv[1])` and, when matched, awaits `cli()` and exits. Wired as `npm run indepth` (`node source/plugins/languages/analyzers.mjs`). |
 | `colorsets.json` | Two named palettes, `rainbow` and `complementary`, each an array of 8 `"<index>:<hex>"` entries consumed by `plugin_languages_colors`. |
 | `metadata.yml` | 18 inputs: enable, `ignored`, `skipped`, `limit` (0-8), `threshold`, `other`, `colors`, `aliases`, `sections`, `details`, `indepth`, `indepth_custom`, `analysis_timeout`, `analysis_timeout_repositories`, `categories`, `recent_categories`, `recent_load` (100-1000), `recent_days` (0-365). |
@@ -46,6 +46,11 @@ There is **no `queries/` directory**: the default path reuses base-query data, t
   single repository's commit loop and sets `results.partial.repositories`. Partial results are still rendered.
 - **`lines` detail and the `Other` bucket** only exist in indepth mode - `details` is filtered to drop `lines` when
   `indepth` is off, and `Other`'s line count comes from `missed.lines` via a getter with a no-op setter.
+- **The resolved options are stashed back on the result** as a **non-enumerable** `options` property
+  (`Object.defineProperty(languages, "options", {value: {...}, enumerable: false})`) so JSON output and the EJS
+  partials never see it, while `source/app/metrics/merge.mjs` can re-run `format()` after summing the bytes of
+  several accounts. Keep it non-enumerable, keep its keys in sync with `format()`'s destructuring, and do not
+  change `format()`'s signature without updating the merge.
 - The repository-mode debug line correctly says `... > languages > switched to repository mode`; the `people`
   copy-paste of that line exists in `introduction` and `lines`, not here.
 

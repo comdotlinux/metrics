@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-09-13 | Updated: 2026-09-13 -->
+<!-- Generated: 2026-09-13 | Updated: 2026-09-14 -->
 
 # .github/readme/partials/documentation/setup
 
@@ -13,7 +13,7 @@ settings are documented for end users.
 ## Key Files
 | File | Description |
 |------|-------------|
-| `action.md` | GitHub Action on a profile repository (~10 min, 145 lines). Steps: create a repository named after your login so its `README.md` shows on your profile; create a personal access token and pick scopes (none required by default, `public_repo`, `read:org`, `repo` plus `read:user`, `read:packages`, `read:project`, `gist` as features need them); store it as a repository secret; add the workflow. Substep 3.1 compares `@latest`, `@master`/`@main`, a fork and a pinned version; 3.2 covers configuring options; step 4 embeds the rendered images. Twelve screenshots, the most of any page here. |
+| `action.md` | GitHub Action on a profile repository (~10 min, 178 lines). Steps: create a repository named after your login so its `README.md` shows on your profile; create a personal access token and pick scopes (none required by default, `public_repo`, `read:org`, `repo` plus `read:user`, `read:packages`, `read:project`, `gist` as features need them); store it as a repository secret; add the workflow. Substep 3.1 compares `@latest`, `@master`/`@main`, a fork and a pinned version; 3.2 covers configuring options; 3.3 documents the fork's multi-account `token: |` block (primary = first token's owner, secondaries contribute nameless data only, plus the four caveats); step 4 embeds the rendered images. Twelve screenshots, the most of any page here. |
 | `web.md` | Deploying a web instance (~20 min, 204 lines). Needs docker and a scope-less token. Fetch `settings.example.json`, rename it `settings.json` and edit it. Substep 2.1 covers access lists and rate limiting, 2.2 the global configuration, 2.3 the extras features with an explicit warning that some allow remote code execution and must never be enabled outside a container. Step 3 runs the container, step 4 embeds images and documents the URL parameter syntax, and a final optional section sets the instance up as a service. |
 | `shared.md` | The free shared instance at metrics.lecoq.io (~1 min, 41 lines). Same profile-repository preamble as `action.md`, then points at the site. Notes that compute-intensive plugins are disabled there, that metrics.lecoq.io tracks `@latest` while beta-metrics.lecoq.io tracks `@master`, that availability is not guaranteed, and asks users to consider sponsoring. Numbering jumps from step 0 straight to step 2. |
 | `docker.md` | One-shot rendering with docker (~2 min, 18 lines). Single `docker run --rm --env INPUT_TOKEN=**** --env INPUT_USER=user --volume=/tmp:/renders ghcr.io/lowlighter/metrics:latest` command. Explains that every action option maps to an `INPUT_`-prefixed uppercase environment variable, that output lands in the mounted `/renders`, and that `output_action` defaults to `none` under docker unless both `GITHUB_REPOSITORY` (no `INPUT_` prefix) and `INPUT_COMMITTER_TOKEN` are set. |

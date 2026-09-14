@@ -1,10 +1,10 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-09-13 | Updated: 2026-09-13 -->
+<!-- Generated: 2026-09-13 | Updated: 2026-09-14 -->
 
 # source
 
 ## Purpose
-All application code. Three layers: `app/` (engine + the two front-ends), `plugins/` (data collectors, one directory per plugin, filesystem-discovered), `templates/` (EJS/CSS renderers, one directory per template). Everything is Node 20 ESM (`.mjs`); there is no transpile/bundle step. The linter config for the whole tree lives here.
+All application code. Three layers: `app/` (engine + the two front-ends), `plugins/` (data collectors, one directory per plugin, filesystem-discovered), `templates/` (EJS/CSS renderers, one directory per template). Everything is Node 22 ESM (`.mjs`); there is no transpile/bundle step. The linter config for the whole tree lives here.
 
 ## Key Files
 | File | Description |

@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-09-13 | Updated: 2026-09-13 -->
+<!-- Generated: 2026-09-13 | Updated: 2026-09-14 -->
 
 # .github/scripts
 
@@ -40,6 +40,14 @@ or by a maintainer. None of them is part of the metrics runtime; they import the
   placeholder and gains `uses: lowlighter/metrics@master`, `output_action: none`, `delay: 120`,
   `if: ${{ success() || failure() }}` and defaults for `user` and `plugins_errors_fatal`. An example
   with `test.skip: true` (or `prod.skip: true`) is dropped from that environment.
+- That substitution is **global** (`v.replace(new RegExp(secrets.$regex.source, "g"), ...)`). It used to
+  use the non-global `secrets.$regex` directly, which replaced only the first match, so a multi-line
+  input such as the multi-account `token: |` block silently kept its remaining `${{ secrets.X }}` lines
+  verbatim in `tests/cases/*`. Any new multi-line input relies on the global flag; do not revert it.
+- `tests/secrets.json` gained `METRICS_TOKEN_WORK` (value `MOCKED_TOKEN_WORK`, a placeholder like every
+  other key in that tracked file) for the two two-token examples in
+  `source/plugins/isocalendar/examples.yml`. `tests/mocks/api/github/rest/users/getAuthenticated.mjs`
+  resolves `MOCKED_TOKEN_<X>` to login `x`, which is how the generated case gets a second account.
 - `build.mjs` calls `metadata()` twice with different options: once up front with `{diff: true}` for the
   plugin and template loop, and once per `update()` without it. The `diff` pass compares against the
   published `action.yml`, so a fully offline run can behave differently.

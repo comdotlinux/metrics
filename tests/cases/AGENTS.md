@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-09-13 | Updated: 2026-09-13 -->
+<!-- Generated: 2026-09-13 | Updated: 2026-09-14 -->
 
 # tests/cases
 
@@ -19,7 +19,7 @@ contains; a `[]` file means every example in the source `examples.yml` carries `
 | File | Cases |
 |------|-------|
 | `16personalities.plugin.yml` (1), `achievements.plugin.yml` (2), `activity.plugin.yml` (1), `anilist.plugin.yml` (3), `base.plugin.yml` (1), `calendar.plugin.yml` (2), `chess.plugin.yml` (1), `code.plugin.yml` (1), `contributors.plugin.yml` (2), `core.plugin.yml` (6) | core and github category plugins |
-| `discussions.plugin.yml` (1), `followup.plugin.yml` (4), `fortune.plugin.yml` (1), `gists.plugin.yml` (1), `habits.plugin.yml` (2), `introduction.plugin.yml` (2), `isocalendar.plugin.yml` (2), `languages.plugin.yml` (3), `leetcode.plugin.yml` (1), `licenses.plugin.yml` (1), `lines.plugin.yml` (2) | github and social category plugins |
+| `discussions.plugin.yml` (1), `followup.plugin.yml` (4), `fortune.plugin.yml` (1), `gists.plugin.yml` (1), `habits.plugin.yml` (2), `introduction.plugin.yml` (2), `isocalendar.plugin.yml` (4), `languages.plugin.yml` (3), `leetcode.plugin.yml` (1), `licenses.plugin.yml` (1), `lines.plugin.yml` (2) | github and social category plugins |
 | `music.plugin.yml` (8), `notable.plugin.yml` (2), `pagespeed.plugin.yml` (4), `people.plugin.yml` (2), `posts.plugin.yml` (2), `projects.plugin.yml` (1), `reactions.plugin.yml` (1), `repositories.plugin.yml` (2), `rss.plugin.yml` (1), `screenshot.plugin.yml` (1) | third party service plugins |
 | `sponsors.plugin.yml` (2), `sponsorships.plugin.yml` (1), `stackoverflow.plugin.yml` (1), `stargazers.plugin.yml` (3), `starlists.plugin.yml` (2), `stars.plugin.yml` (1), `steam.plugin.yml` (2), `stock.plugin.yml` (1), `topics.plugin.yml` (2), `traffic.plugin.yml` (1), `wakatime.plugin.yml` (1) | remaining plugins |
 | `crypto.plugin.yml`, `nightscout.plugin.yml`, `poopmap.plugin.yml`, `skyline.plugin.yml`, `splatoon.plugin.yml`, `support.plugin.yml`, `tweets.plugin.yml` | all `[]`: every example is skipped in the test environment (usually because it needs a live third party account or a very slow renderer) |

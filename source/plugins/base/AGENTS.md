@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-09-13 | Updated: 2026-09-13 -->
+<!-- Generated: 2026-09-13 | Updated: 2026-09-14 -->
 
 # base
 
@@ -27,12 +27,15 @@ container registry endpoint, and publishes the cross-plugin shared options. It a
   variables), are:
   - `user.graphql` (`BaseUser`, `$login`) — identity fields of a user: `databaseId`, `name`, `login`, `location`, `createdAt`, `avatarUrl`, `websiteUrl`, `twitterUsername`.
   - `organization.graphql` (`BaseOrganization`, `$login`) — same identity fields for an organization, plus `isVerified`.
-  - `user.x.graphql` (`BaseUserX`, `$login`, `$affiliations`, `$calendar.from`, `$calendar.to`) — the bulk user query: packages, starred repositories, watching, sponsorships both ways, followers/following, issue comments, organizations, repositories contributed to, `repositories(last: 0 $affiliations) {totalCount totalDiskUsage}`, the whole `contributionsCollection` counters and the last-14-days contribution calendar colors.
+  - `user.x.graphql` (`BaseUserX`, `$login`, `$affiliations`, `$calendar.from`, `$calendar.to`) — the bulk user query: packages, starred repositories, watching, sponsorships both ways, followers/following, issue comments, organizations, repositories contributed to, `repositories(last: 0 $affiliations) {totalCount totalDiskUsage}`, the whole `contributionsCollection` counters and the last-14-days contribution calendar days
+    (`date`, `contributionCount` and `color` — `date` and `contributionCount` are there because
+    `source/app/metrics/merge.mjs` keys the multi-account calendar sum on the API date and re-colours by
+    the merged daily maximum).
   - `organization.x.graphql` (`BaseOrganizationX`, `$login`, `$affiliations`) — the bulk organization query: packages, sponsorships both ways, `membersWithRole`, repositories totals.
   - `field.graphql` (`BaseField`, `$account`, `$login`, `$field`) — unit fallback that fetches `totalCount` of a single named connection.
   - `field.repositories.graphql` (`BaseFieldRepositories`, `$account`, `$login`, `$affiliations`, `$field`) — unit fallback for `repositories.totalCount` / `repositories.totalDiskUsage`.
   - `contributions.graphql` (`BaseContributions`, `$login`, `$range`, `$field`) — one `contributionsCollection` counter; `$range` is either empty (last year) or a literal `(from: "...", to: "...")` used by indepth mode.
-  - `calendar.graphql` (`BaseCalendar`, `$login`, `$calendar.from`, `$calendar.to`) — contribution calendar colors only, the fallback when the bulk query fails.
+  - `calendar.graphql` (`BaseCalendar`, `$login`, `$calendar.from`, `$calendar.to`) — the contribution calendar only (same `date`/`contributionCount`/`color` day shape as `user.x.graphql`), the fallback when the bulk query fails. Keep the two day selections identical or a merged calendar loses its keys on the fallback path.
   - `repositories.graphql` (`BaseRepositories`, `$account`, `$login`, `$type`, `$after`, `$repositories`, `$forks`, `$affiliations`, `$constraints`) — the paginated repository list ordered by `UPDATED_AT DESC` with cursors, returning name/owner/fork state/watchers/stargazers/releases/deployments/environments/top 8 languages/licenseInfo and open, closed and merged issue and pull request counts.
   - `repository.graphql` (`BaseRepository`, `$account`, `$login`, `$repo`) — a single repository with the same fields plus `diskUsage` and `homepageUrl`. Not used by this plugin: `source/templates/repository/template.mjs` calls `queries.base.repository(...)` to populate `data.repo`.
 

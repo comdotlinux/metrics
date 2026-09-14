@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-09-13 | Updated: 2026-09-13 -->
+<!-- Generated: 2026-09-13 | Updated: 2026-09-14 -->
 
 # habits
 
@@ -30,6 +30,9 @@ characters per line of code, and optionally charts plus a recently-used-language
 - Indent detection relies on string coercion of a match array: the code runs `patch.match(/((?:\t)|(?:[ ]{2})) /gm)`
   and then `/^\t/.test(indent)` on the **array**. It works because arrays stringify to their joined elements, but it is
   fragile. Do not "simplify" it without re-checking the tabs/spaces counts.
+- `PushEvent` payloads no longer always carry a `commits` array (upstream PR 1834), so the commit flattening is
+  `.flatMap(({payload}) => payload.commits ?? [])` and the author filter uses `author?.login` / `author?.email` /
+  `author?.name`. Keep both guards: without them a single modern push event throws and the plugin renders an error box.
 - `languages.threshold` is a percentage **string** (`"0%"`); it is stripped and divided by 100 before use.
 - The timezone offset comes from `data.config.timezone?.offset ?? 0` and is added in milliseconds before reading
   `getHours()` / `getDay()`, so wrong-looking peak hours usually mean a missing `config_timezone`.

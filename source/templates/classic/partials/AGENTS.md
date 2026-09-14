@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-09-13 | Updated: 2026-09-13 -->
+<!-- Generated: 2026-09-13 | Updated: 2026-09-14 -->
 
 # source/templates/classic/partials
 
@@ -23,7 +23,7 @@ it because its markup lives inside `base.repositories.ejs`.
 | `activity.ejs` | Activity plugin: `events` feed (comment, member, star, release, fork, push, ref, review, wiki, public) with optional `timestamps`. |
 | `anilist.ejs` | Anilist plugin: anime and manga `lists`, favourite `characters`, `user` profile, `sections` filter. |
 | `base.activity+community.ejs` | Base plugin `activity` and `community` parts (user accounts only): commits, pull requests reviewed and opened, issues, issue comments, organizations, following, sponsoring. |
-| `base.header.ejs` | Base plugin `header` part: avatar, display name, registration date with cakeday flag, followers, hireable badge, inline contribution calendar squares, contributed repositories. Has separate user, organization and repository branches. |
+| `base.header.ejs` | Base plugin `header` part: avatar, display name (followed by ` (login1 + login2)` from `user.accounts` when several accounts were merged, see `source/app/metrics/merge.mjs`; single-account renders are byte-identical to before), registration date with cakeday flag, followers, hireable badge, inline contribution calendar squares, contributed repositories. Has separate user, organization and repository branches. |
 | `base.repositories.ejs` | Base plugin `repositories` part: repository count and forks, favourite license, releases, packages, disk usage, sponsors, stargazers, forks, watchers. Also inlines `plugins.traffic.views` and the `base` section of `plugins.lines`. |
 | `calendar.ejs` | Calendar plugin: full contribution grid per year from `years`. |
 | `chess.ejs` | Chess plugin: last game board `animation`, `moves`, `platform`, `result` and `meta` (players, opening). |
