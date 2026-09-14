@@ -1,6 +1,6 @@
 {
   "name": "metrics",
-  "version": "3.35.0",
+  "version": "3.36.0",
   "description": "An infographics generator with 40+ plugins and 300+ options to display stats about your GitHub account and render them as SVG, Markdown, PDF or JSON!",
   "main": "index.mjs",
   "scripts": {
@@ -9,6 +9,7 @@
     "test-contrib": "jest --runInBand ci.test.js --noStackTrace",
     "test-presets": "jest --runInBand presets.test.js --noStackTrace",
     "test-metrics": "jest --runInBand metrics.test.js",
+    "test-merge": "jest --runInBand merge.test.js --noStackTrace",
     "build": "node .github/scripts/build.mjs",
     "presets": "node .github/scripts/presets_examples.mjs",
     "quickstart": "node .github/scripts/quickstart/index.mjs",
