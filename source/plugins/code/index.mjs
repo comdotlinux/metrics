@@ -38,7 +38,7 @@ export default async function({login, q, imports, data, rest, account}, {enabled
                 .filter(({repo: {name: repo}}) => imports.filters.repo(repo, skipped))
                 .filter(event => visibility === "public" ? event.public : true)
                 .filter(({created_at}) => Number.isFinite(days) ? new Date(created_at) > new Date(Date.now() - days * 24 * 60 * 60 * 1000) : true)
-                .flatMap(({created_at: created, payload}) => Promise.all(payload.commits.map(async commit => ({created: new Date(created), ...(await rest.request(commit.url)).data})))),
+                .flatMap(({created_at: created, payload}) => Promise.all((payload.commits ?? []).map(async commit => ({created: new Date(created), ...(await rest.request(commit.url)).data})))),
             ]),
           ]
             .flat()
