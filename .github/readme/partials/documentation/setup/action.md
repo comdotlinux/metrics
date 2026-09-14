@@ -147,7 +147,9 @@ Repository names, owners and organizations of secondary accounts never appear in
 
 > ⚠️ With a non-default `repositories_affiliations`, a repository shared by two accounts can count twice in languages bytes
 
-> ⚠️ A failing secondary token fails the whole run (by design, so numbers are never silently un-combined)
+> ⚠️ Plugins that are not merged stay primary-only, so their numbers can be lower than the merged base counters (for example the [`✨ stargazers`](/source/plugins/stargazers/README.md) chart tops out at the primary account's stars while the `Stargazers` counter of `base: repositories` counts every account)
+
+> ⚠️ A failing secondary token, or a failing plugin on a secondary account, fails the whole run (by design, so numbers are never silently un-combined)
 
 ## 4️ Add images to your profile `README.md`
 

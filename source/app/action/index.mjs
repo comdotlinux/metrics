@@ -168,7 +168,7 @@ function quit(reason) {
     q["debug.flags"] = dflags.join(" ")
 
     //Tokens for data gathering (first token is the primary account, others contribute nameless data only)
-    const tokens = token.split(/[\n,]/).map(t => t.trim()).filter(t => t)
+    const tokens = `${token ?? ""}`.split(/[\n,]/).map(t => t.trim()).filter(t => t)
     if (!tokens.length)
       throw new Error("You must provide a valid GitHub personal token to gather your metrics (see https://github.com/lowlighter/metrics/blob/master/.github/readme/partials/documentation/setup/action.md for more informations)")
     info("GitHub tokens", tokens.length)
@@ -258,13 +258,17 @@ function quit(reason) {
       }
       info(`GitHub account #${i + 1}`, account.login)
     }
-    const authenticated = accounts[0].login
+    //Several tokens of one account would merge it into itself
+    const owners = accounts.filter((account, i) => accounts.findIndex(({login}) => login === account.login) === i)
+    if (owners.length < accounts.length)
+      info("GitHub accounts", `${owners.length} (${accounts.length - owners.length} duplicate token owner(s) ignored)`)
+    const authenticated = owners[0].login
     conf.authenticated = authenticated
-    conf.accounts = accounts
+    conf.accounts = owners
     conf.debug = debug
-    if ((_user) && (tokens.length > 1))
+    if ((_user) && (owners.length > 1))
       info("GitHub user", "(ignored: multiple tokens, primary is the first token's owner)")
-    const user = tokens.length > 1 ? authenticated : (_user || authenticated)
+    const user = owners.length > 1 ? authenticated : (_user || authenticated)
     info("GitHub account", user)
     if (q.repo)
       info("GitHub repository", `${user}/${q.repo}`)

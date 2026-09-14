@@ -6,7 +6,7 @@ const path = require("path")
 const run = spawnSync("node", ["tests/merge.fixtures.mjs"], {cwd: path.join(__dirname, ".."), encoding: "utf8", maxBuffer: 64 * 1024 * 1024})
 if (run.status !== 0)
   throw new Error(`tests/merge.fixtures.mjs exited with ${run.status}\n${run.stderr}`)
-const {two, one, org, live} = JSON.parse(run.stdout)
+const {two, one, org, live, three} = JSON.parse(run.stdout)
 
 const PALETTE = ["#ebedf0", "#9be9a8", "#40c463", "#30a14e", "#216e39"]
 const days = weeks => weeks.flatMap(({contributionDays}) => contributionDays)
@@ -126,6 +126,18 @@ describe("Multi-account merge", () => {
     expect(org.plugins.calendar).toEqual(one.plugins.calendar)
     expect(org.plugins.languages.total).toBe(300)
     expect(org).toEqual(one)
+  })
+
+  test("a third account accumulates on top of the second instead of resetting it", () => {
+    expect(three.user.followers.totalCount).toBe(513 + 74 + 74)
+    expect(three.computed.repositories.stargazers).toBe(30 + 7 + 11)
+    expect(three.computed.repositories.watchers).toBe(two.computed.repositories.watchers + 2)
+    expect(three.plugins.languages.unique).toBe(two.plugins.languages.unique + 1)
+    expect(three.plugins.languages.stats).toMatchObject({JavaScript: 300, CSS: 100, Python: 50, Rust: 20})
+    expect(three.user.repositoriesContributedTo.totalCount).toBe(two.user.repositoriesContributedTo.totalCount)
+    expect(three.user.repositories.nodes).toHaveLength(2)
+    expect(JSON.stringify(three)).not.toContain("third/")
+    expect(JSON.stringify(three)).not.toContain("\"login\":\"third\"")
   })
 
   test("untouched primary fixture has the expected baseline", () => {

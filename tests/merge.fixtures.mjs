@@ -267,6 +267,20 @@ const one = build()
 const org = build()
 merge(org, organization(), {imports, q, login: "primary"})
 
+//Three accounts: the union must accumulate across merges (a later account must not reset what an earlier one added)
+function third() {
+  const clone = secondary()
+  clone.user.login = "third"
+  clone.user.repositories = {totalCount: 1, totalDiskUsage: 100, nodes: [repo({owner: "third", name: "z", counts: {stargazers: 11, watchers: 2}, languages: [["Rust", 20, "#dea584"]]})]}
+  clone.user.repositoriesContributedTo = {totalCount: 1, nodes: [repo({owner: "shared", name: "repo", languages: [["Go", 10, "#00ADD8"]]})]}
+  clone.plugins.languages = {...clone.plugins.languages, unique: 1, colors: {Rust: "#dea584"}, total: 20, stats: {Rust: 20}}
+  return clone
+}
+const three = build()
+const merged = {repositories: [], contributed: []}
+merge(three, secondary(), {imports, q, login: "primary", merged})
+merge(three, third(), {imports, q, login: "primary", merged})
+
 //Live getters: followup counters must still resolve after merge (no assignment to getter-only properties)
 const live = {typeError: false, issuesCount: null, issuesOpen: null}
 try {
@@ -280,4 +294,4 @@ catch (error) {
 }
 
 //Output (NaN/Infinity are not valid JSON)
-process.stdout.write(JSON.stringify({two, one, org, live}, (_, value) => (typeof value === "number") && (!Number.isFinite(value)) ? `${value}` : value))
+process.stdout.write(JSON.stringify({two, one, org, live, three}, (_, value) => (typeof value === "number") && (!Number.isFinite(value)) ? `${value}` : value))

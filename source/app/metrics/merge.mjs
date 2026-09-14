@@ -51,12 +51,12 @@ function recolor(list) {
     day.color = PALETTE[day.contributionCount ? Math.min(4, Math.ceil(4 * day.contributionCount / max)) : 0]
 }
 
-/**Recursive sum of numeric leaves, keeping a's shape (keys missing in b keep a's value) */
+/**Recursive sum of numeric leaves over the union of keys (a key present on one side only keeps that side's value) */
 function sumLeaves(a, b) {
   if ((Number.isFinite(a)) && (Number.isFinite(b)))
     return a + b
   if ((a) && (b) && (typeof a === "object") && (typeof b === "object") && (!Array.isArray(a)) && (!Array.isArray(b)))
-    return Object.fromEntries(Object.keys(a).map(k => [k, k in b ? sumLeaves(a[k], b[k]) : a[k]]))
+    return Object.fromEntries([...new Set([...Object.keys(a), ...Object.keys(b)])].map(k => [k, (k in a) && (k in b) ? sumLeaves(a[k], b[k]) : a[k] ?? b[k]]))
   return a
 }
 
@@ -75,8 +75,10 @@ function add(target, source, keys) {
  * Merge a secondary account's JSON clone into the primary account's live data (mutates data, returns nothing).
  * Rules: counters are SUMMED, repository lists are UNIONED transiently (never stored on data, so no secondary repository
  * name or owner ever reaches the output), everything not whitelisted stays PRIMARY.
+ * `merged` is the caller's scratch object holding the union of every account merged so far, so that later accounts
+ * do not reset what earlier ones contributed to the recomputed values.
  */
-export default function merge(data, clone, {imports, q, login}) {
+export default function merge(data, clone, {imports, q, login, merged = {repositories: [], contributed: []}}) {
   const secondary = clone.user.login
 
   //SUM: user counters
@@ -91,17 +93,20 @@ export default function merge(data, clone, {imports, q, login}) {
       data.user.contributionsCollection[k] = sum(data.user.contributionsCollection[k], clone.user.contributionsCollection?.[k])
   }
 
-  //UNION (transient): repositories deduplicated by owner/name, primary first
+  //UNION (transient): repositories deduplicated by owner/name, primary first, accumulated across merged accounts
   //Overlap beyond the fetched nodes is unknown, so totals are only corrected for repositories present in both node lists (approximation)
-  const cnodes = clone.user.repositories?.nodes ?? [], rnodes = data.user.repositories?.nodes ?? []
-  const repos = union(rnodes, cnodes)
-  const contributed = union(data.user.repositoriesContributedTo?.nodes ?? [], clone.user.repositoriesContributedTo?.nodes ?? [])
+  const ccontributed = clone.user.repositoriesContributedTo?.nodes ?? [], cnodes = clone.user.repositories?.nodes ?? []
+  const known = union(data.user.repositories?.nodes ?? [], merged.repositories)
+  const knownContributed = union(data.user.repositoriesContributedTo?.nodes ?? [], merged.contributed)
+  merged.repositories = union(known, cnodes)
+  merged.contributed = union(knownContributed, ccontributed)
+  const {repositories: repos, contributed} = merged
   if (data.user.repositoriesContributedTo) {
     const a = data.user.repositoriesContributedTo, b = clone.user.repositoriesContributedTo ?? {}
-    a.totalCount = sum(a.totalCount, b.totalCount) - overlap(a.nodes ?? [], b.nodes ?? [])
+    a.totalCount = sum(a.totalCount, b.totalCount) - overlap(knownContributed, ccontributed)
   }
   if (data.user.contributionsCollection)
-    data.user.contributionsCollection.totalRepositoriesWithContributedCommits = sum(data.user.contributionsCollection.totalRepositoriesWithContributedCommits, clone.user.contributionsCollection?.totalRepositoriesWithContributedCommits) - overlap(rnodes, cnodes)
+    data.user.contributionsCollection.totalRepositoriesWithContributedCommits = sum(data.user.contributionsCollection.totalRepositoriesWithContributedCommits, clone.user.contributionsCollection?.totalRepositoriesWithContributedCommits) - overlap(known, cnodes)
 
   //SUM: header calendar (mirrors computed.calendar in core)
   const strip = days(data.user.calendar?.contributionCalendar?.weeks ?? [])
@@ -162,8 +167,12 @@ export default function merge(data, clone, {imports, q, login}) {
       if ((k in lang) && (k in other))
         lang[k] = sumLeaves(lang[k], other[k])
     }
-    if (lang.options)
-      format(lang, {...lang.options, imports, login})
+    if (lang.options) {
+      //Custom colours were resolved over the primary's repositories only: apply the same rule to languages that only other accounts have
+      const {colors} = lang.options
+      const customColors = {...lang.options.customColors, ...Object.fromEntries(Object.keys(lang.stats).filter(name => colors[name.toLocaleLowerCase()]).map(name => [name, colors[name.toLocaleLowerCase()]]))}
+      format(lang, {...lang.options, customColors, imports, login})
+    }
   }
 
   //followup: SUM data properties only (count/open/closed/merged are getters over computed.repositories, already aggregated), indepth stays PRIMARY

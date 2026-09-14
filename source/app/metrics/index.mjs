@@ -98,6 +98,7 @@ export default async function metrics({login, q}, {graphql, rest, plugins, conf,
     else if (secondaries.length) {
       const sq = {...q, ...Object.fromEntries(Object.keys(Plugins).filter(name => !["base", "core", ...MERGED].includes(name)).map(name => [name, false]))}
       const {debug} = console
+      const merged = {repositories: [], contributed: []}
       for (const [i, account] of secondaries.entries()) {
         debug(`metrics/compute/${login} > merge > computing ${account.login}`)
         let cerrors, clone
@@ -112,8 +113,10 @@ export default async function metrics({login, q}, {graphql, rest, plugins, conf,
         finally {
           console.debug = debug
         }
-        errors.push(...cerrors.map(error => ({...error, account: account.login})))
-        merge(data, clone, {imports, q, login})
+        //Fail closed: a half-computed secondary account would silently un-combine numbers the header claims to combine
+        if (cerrors.length)
+          throw new Error(`account #${i + 2} (${account.login}): ${[...new Set(cerrors.map(({name}) => name ?? "base"))].join(", ")} failed`)
+        merge(data, clone, {imports, q, login, merged})
         debug(`metrics/compute/${login} > merge > ${account.login} merged`)
       }
       data.user.accounts = conf.accounts.map(({login}) => login)
