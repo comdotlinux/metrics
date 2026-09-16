@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-09-13 | Updated: 2026-09-13 -->
+<!-- Generated: 2026-09-13 | Updated: 2026-09-16 -->
 
 # source/app/web
 
@@ -84,7 +84,14 @@ entirely, and then forces `{sandbox: true, optimize: true, cached: 0, "plugins.d
 {default: true}}`. It also implies mocked data.
 
 Mocked mode. `settings.mocked` (or sandbox) swaps in `tests/mocks/index.mjs` and fills every plugin's missing
-token settings with `MOCKED_TOKEN`; the value `"force"` overwrites even real tokens.
+token settings with `MOCKED_TOKEN`; the value `"force"` overwrites even real tokens. `mocks()` now takes
+`{graphql, rest, token}` and wraps every api object it is handed; this file calls it once, without a token,
+which behaves as before. Only its axios/rss/google-maps global patches are installed once per process.
+
+Single account only. Multi-account rendering is an action feature: `conf.accounts` is built from the
+multi-valued `token` input in `source/app/action/index.mjs`, and this file never sets it, so
+`source/app/metrics/merge.mjs` is never reached from a web request and `user.accounts` stays undefined. A
+visitor renders exactly one login, as before.
 
 Settings keys read here: `token`, `maxusers`, `restricted`, `debug`, `cached`, `port`, `ratelimiter`,
 `plugins`, `plugins.default`, `mocked`, `modes`, `outputs`, `templates.enabled`, `hosted`, `oauth.{id,

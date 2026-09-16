@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-09-13 | Updated: 2026-09-13 -->
+<!-- Generated: 2026-09-13 | Updated: 2026-09-16 -->
 
 # list
 
@@ -31,7 +31,8 @@ sorts; that happens in the parent.
   leaderboard `null` for accounts below the floor, which keeps meaningless percentiles out of the render.
 - **User achievements**: Developer (public repositories, `[1,20,50,100,250]`, leaderboard `created_rank`),
   Forker (forks, `[1,5,10,20,50]`), Contributor (pull requests, `[1,200,500,1000,2500]`), Manager (user
-  projects, `[1,2,3,4,5]`), Reviewer (pull request reviews, `[1,200,500,1000,2500]`), Packager (packages plus
+  `projectsV2` boards, `[1,2,3,4,5]`; the classic `projects` field it used before was removed from the
+  GraphQL API, see upstream PR 1834), Reviewer (pull request reviews, `[1,200,500,1000,2500]`), Packager (packages plus
   ghcr.io containers via `rest.packages.listPackagesForUser`, `[1,5,10,20,30]`), Gister (gists,
   `[1,20,50,100,250]`), Worker (organizations, `[1,2,4,8,10]`), Stargazer (starred repositories,
   `[1,200,500,1000,2500]`), Follower (following, `[1,200,500,1000,2500]`), Influencer (followers,
